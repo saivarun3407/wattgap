@@ -65,3 +65,14 @@ One unit, plain language from **facts only**:
 ## Success = Base engineer says
 
 “That’s the missed-money view we don’t have on a projector, and you actually killed nodes.”
+
+
+## Extension: FleetPulse Desk
+
+Weekend stretch on top of WattGap (see [PLAN.md](./PLAN.md)):
+
+- HITL desk for high-impact batches (TTL fail-closed)
+- Signed, replay-protected commands + rogue telemetry quarantine
+- Audit log + compliance export for the “ADER/utility evidence” story
+
+WattGap remains the **$ gap + opportunity** core. Desk does not replace policy math with an LLM.

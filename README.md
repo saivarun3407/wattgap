@@ -42,6 +42,7 @@ Do **not** let an LLM pick megawatts. Rules dispatch. LLM may write the receipt 
 |---|---|
 | [PRODUCT.md](./PRODUCT.md) | Spec, policy, meters |
 | [HACK.md](./HACK.md) | 48h plan |
+| [PLAN.md](./PLAN.md) | FleetPulse Desk — full track merge + schemas + demo |
 | `sim/` | Runnable opportunity + fleet sim |
 | `data/sample_prices.csv` | Fake ERCOT-like 5-min series (replace with real dump before the weekend) |
 
