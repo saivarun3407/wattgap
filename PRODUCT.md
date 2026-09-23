@@ -76,3 +76,6 @@ Weekend stretch on top of WattGap (see [PLAN.md](./PLAN.md)):
 - Audit log + compliance export for the “ADER/utility evidence” story
 
 WattGap remains the **$ gap + opportunity** core. Desk does not replace policy math with an LLM.
+
+
+See also the unified bible: [PROJECT.md](./PROJECT.md).

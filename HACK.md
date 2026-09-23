@@ -1,3 +1,5 @@
+Canonical scope: [PROJECT.md](./PROJECT.md).
+
 # 48h plan
 
 Full product + track merge: see [PLAN.md](./PLAN.md) (FleetPulse Desk extends WattGap).
