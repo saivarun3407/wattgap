@@ -18,10 +18,10 @@ SECONDS_PER_TICK = 15.0  # desk/crypto time that passes per replayed 15-minute i
 class Sim:
     def __init__(self, d: date = SCENARIOS["spike"], start: str = "12:00", size: int = 400,
                  clock: Clock | None = None, audit_path: Path | None = None, secret: bytes | None = None,
-                 reply_timeout: float | None = None):
+                 reply_timeout: float | None = None, desk_ttl_s: float = 90.0, desk_timeout_s: float = 20.0):
         self.clock = clock or VirtualClock()
         self.audit = AuditLog(audit_path)
-        self.desk = Desk(self.clock, self.audit)
+        self.desk = Desk(self.clock, self.audit, ttl_s=desk_ttl_s, heartbeat_timeout_s=desk_timeout_s)
         self.fleet = Fleet(self.clock, self.audit, self.desk, secret or fleet_secret(), size=size)
         if reply_timeout is not None:
             self.fleet.reply_timeout = reply_timeout

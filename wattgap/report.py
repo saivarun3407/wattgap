@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from functools import lru_cache
 
 from . import econ
@@ -56,14 +56,15 @@ def month_summary() -> dict:
 
 
 def _events(steps: list[econ.Step]) -> list[dict]:
-    """Group consecutive discharge intervals into member-readable events."""
+    """Group consecutive discharge intervals into member-readable events (end = interval end)."""
     events, cur = [], None
     for s in steps:
         if s.action == "DISCHARGE":
             if cur is None:
                 cur = {"start": s.start, "end": s.start, "kwh": 0.0, "value": 0.0,
                        "peak_price": 0.0, "reason": s.reason}
-            cur["end"], cur["kwh"] = s.start, cur["kwh"] + s.grid_kwh
+            end = datetime.fromisoformat(s.start) + timedelta(minutes=15)
+            cur["end"], cur["kwh"] = end.isoformat(), cur["kwh"] + s.grid_kwh
             cur["value"] += s.cash
             cur["peak_price"] = max(cur["peak_price"], s.price)
         elif cur:

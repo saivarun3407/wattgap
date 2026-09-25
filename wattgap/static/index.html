@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WattGap · fail-closed fleet dispatch on real ERCOT prices</title>
+<style>
+:root{--ink:#0e1726;--ink2:#46526a;--mute:#8a94a8;--line:#e6e9ef;--bg:#f6f7f9;--card:#fff;
+--amber:#ff7a1a;--amber2:#fff1e6;--green:#12a150;--green2:#e7f7ee;--red:#e0342b;--red2:#fdecea;--blue:#2f6bff;--violet:#7b5cff;
+--hou:#ff7a1a;--nor:#2f6bff;--sou:#12a150;--wes:#7b5cff}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+header{background:var(--ink);color:#fff;padding:18px 32px;display:flex;align-items:center;gap:18px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;letter-spacing:-.3px}
+.logo i{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#ff9a3d,#ff5a1a);display:grid;place-items:center;font-style:normal;font-size:16px}
+header .tag{color:#aab4c8;font-size:13px}header .tracks{margin-left:auto;display:flex;gap:8px}
+.pill{border:1px solid #33405a;color:#d6dbe6;border-radius:99px;padding:3px 10px;font-size:12px}.pill.on{background:#ff7a1a;border-color:#ff7a1a;color:#fff}
+main{max-width:1320px;margin:0 auto;padding:24px 32px 64px}
+h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink2);margin:32px 0 12px}
+.grid{display:grid;gap:16px}.k4{grid-template-columns:repeat(4,1fr)}.c21{grid-template-columns:2fr 1fr}.c12{grid-template-columns:1fr 1.3fr}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.kpi .v{font-size:30px;font-weight:800;letter-spacing:-.5px}.kpi .l{color:var(--ink2);font-size:13px}.kpi .s{color:var(--mute);font-size:12px;margin-top:4px}
+.pos{color:var(--green)}.neg{color:var(--red)}.mute{color:var(--mute)}
+.seg{display:inline-flex;background:#eef0f4;border-radius:10px;padding:3px}.seg button{border:0;background:none;padding:6px 12px;border-radius:8px;font:inherit;cursor:pointer;color:var(--ink2)}
+.seg button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px #0002;font-weight:600}
+.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.sp{flex:1}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right}th:first-child,td:first-child{text-align:left}th{color:var(--mute);font-weight:500}
+svg text{font:11px Inter,system-ui,sans-serif;fill:var(--mute)}
+.legend{display:flex;gap:14px;font-size:12px;color:var(--ink2)}.legend b{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.btn{border:1px solid var(--line);background:#fff;border-radius:9px;padding:7px 12px;font:inherit;font-size:13px;cursor:pointer;color:var(--ink)}
+.btn:hover{border-color:#c9cfdb}.btn.danger{color:var(--red);border-color:#f3c5c2}.btn.go{background:var(--green);border-color:var(--green);color:#fff}.btn.dark{background:var(--ink);color:#fff;border-color:var(--ink)}
+.big{font-size:40px;font-weight:800;letter-spacing:-1px}.clock{font-size:20px;font-weight:700}
+.alarm{background:var(--red2);color:var(--red);border:1px solid #f6c9c5;border-radius:10px;padding:10px 12px;font-weight:600;margin-top:12px}
+.ok{background:var(--green2);color:var(--green);border:1px solid #bfe8d0;border-radius:10px;padding:10px 12px;font-weight:600;margin-top:12px}
+.deg{background:#fff7e0;color:#9a6700;border:1px solid #f3e0a6;border-radius:10px;padding:8px 12px;margin-top:8px;font-size:13px}
+.zones{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}
+.zone h4{margin:0 0 6px;font-size:12px;color:var(--ink2);display:flex;justify-content:space-between}
+.dots{display:grid;grid-template-columns:repeat(10,1fr);gap:3px}.dot{aspect-ratio:1;border-radius:3px;background:#d7dce5}
+.dot.DISCHARGE{background:var(--amber)}.dot.CHARGE{background:var(--blue)}.dot.suspect{background:#f3c74a}.dot.dead{background:#1f2633}.dot.quarantined{background:var(--red)}
+.batch{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}.batch .id{font-weight:700}
+.st{font-size:11px;font-weight:700;text-transform:uppercase;border-radius:6px;padding:2px 7px;letter-spacing:.04em}
+.st.pending{background:#fff7e0;color:#9a6700}.st.approved,.st.auto{background:var(--green2);color:var(--green)}.st.expired,.st.rejected,.st.cancelled{background:var(--red2);color:var(--red)}.st.done{background:#eef0f4;color:var(--ink2)}
+.ttl{height:5px;background:#eef0f4;border-radius:9px;overflow:hidden;margin:8px 0}.ttl i{display:block;height:100%;background:var(--amber)}
+.feed{max-height:300px;overflow:auto;font:12px ui-monospace,SFMono-Regular,Menlo,monospace}.feed div{padding:3px 0;border-bottom:1px dashed var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.feed .bad{color:var(--red)}.feed .good{color:var(--green)}.feed .warn{color:#9a6700}
+.phone{max-width:390px;margin:0 auto;border:10px solid var(--ink);border-radius:38px;padding:22px 18px;background:#fff;box-shadow:0 20px 50px #0e172622}
+.phone .hello{font-size:13px;color:var(--mute)}.phone h3{margin:2px 0 14px;font-size:22px;letter-spacing:-.4px}
+.receipt{background:var(--amber2);border-radius:16px;padding:16px;margin-bottom:12px}.receipt .v{font-size:34px;font-weight:800;color:#c24e00;letter-spacing:-.8px}
+.shield{border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;gap:12px;align-items:center;margin-bottom:12px}
+.toggle{width:46px;height:28px;border-radius:99px;background:#d7dce5;position:relative;cursor:pointer;flex:none;border:0}.toggle i{position:absolute;top:3px;left:3px;width:22px;height:22px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px #0003}
+.toggle.on{background:var(--green)}.toggle.on i{left:21px}
+.stmt div{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:13px}.stmt div b{font-weight:600}
+.note{font-size:12px;color:var(--mute);margin-top:10px}
+.why{font-size:13px;color:var(--ink2);line-height:1.55}.why b{color:var(--ink)}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"><i>⚡</i>WattGap</div>
+  <div class="tag">Fail-closed dispatch for a home-battery fleet · real ERCOT prices · simulated fleet</div>
+  <div class="tracks"><span class="pill on">Orchestration</span><span class="pill on">Most Commercializable</span><span class="pill">engine: Open Grid Data</span></div>
+</header>
+<main>
+  <section class="grid k4" id="kpis"></section>
+
+  <h2>Real days · ERCOT real-time 15-min load-zone prices</h2>
+  <div class="grid c21">
+    <div class="card">
+      <div class="row"><div class="seg" id="daySeg"></div><div class="sp"></div>
+        <div class="legend"><span><b style="background:var(--hou)"></b>Houston</span><span><b style="background:var(--nor)"></b>North</span><span><b style="background:var(--sou)"></b>South</span><span><b style="background:var(--wes)"></b>West</span></div></div>
+      <svg id="priceChart" viewBox="0 0 820 230" width="100%"></svg>
+      <div class="legend" style="margin:4px 0 0"><span><b style="background:var(--amber)"></b>WattGap SoC (Houston home)</span><span><b style="background:#9aa3b5"></b>Fair schedule SoC</span><span><b style="background:#fde3cf"></b>5–9 PM schedule window</span></div>
+      <svg id="socChart" viewBox="0 0 820 120" width="100%"></svg>
+    </div>
+    <div class="card">
+      <div style="font-weight:700;margin-bottom:6px">Net $ per home, by zone</div>
+      <table id="zoneTable"></table>
+      <div class="why" id="dayWhy" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <h2>Live fleet · replaying 2023-09-06 with 400 independent battery workers</h2>
+  <div class="grid c21">
+    <div class="card">
+      <div class="row">
+        <div><div class="mute" style="font-size:12px">Replay clock</div><div class="clock" id="clock">—</div></div>
+        <div class="sp"></div>
+        <div style="text-align:right"><div class="mute" style="font-size:12px">Committed MW</div><div class="big" id="target">0.00</div></div>
+        <div style="text-align:right;margin-left:18px"><div class="mute" style="font-size:12px">Delivered MW</div><div class="big" id="delivered">0.00</div></div>
+        <div style="text-align:right;margin-left:18px"><div class="mute" style="font-size:12px">Healthy</div><div class="big" id="healthy">—</div></div>
+      </div>
+      <div id="status"></div>
+      <svg id="spark" viewBox="0 0 820 70" width="100%" style="margin-top:10px"></svg>
+      <div class="zones" id="zones"></div>
+      <div class="legend" style="margin-top:10px"><span><b style="background:var(--amber)"></b>discharging</span><span><b style="background:var(--blue)"></b>charging</span><span><b style="background:#d7dce5"></b>idle</span><span><b style="background:#f3c74a"></b>suspect</span><span><b style="background:#1f2633"></b>dead</span><span><b style="background:var(--red)"></b>quarantined</span></div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn" id="play">Pause</button><button class="btn" onclick="post('/api/control/step')">Step</button><button class="btn" onclick="post('/api/control/reset')">Reset</button>
+        <div class="sp"></div>
+        <select id="zoneSel" class="btn"><option>LZ_HOUSTON</option><option>LZ_NORTH</option><option>LZ_SOUTH</option><option>LZ_WEST</option></select>
+        <button class="btn danger" onclick="chaos('kill')">Kill 30% of zone</button>
+        <button class="btn danger" onclick="chaos('partition')">Partition zone</button>
+        <button class="btn danger" onclick="chaos('stale')">Stale price feed</button>
+        <button class="btn danger" onclick="chaos('rogue')">Rogue SoC</button>
+        <button class="btn danger" onclick="chaos('forge')">Forged cmd</button>
+        <button class="btn danger" onclick="chaos('replay')">Replay cmd</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="row"><div style="font-weight:700">Dispatch desk</div><div class="sp"></div><span id="deskState" class="st"></span>
+        <button class="btn danger" id="deskBtn"></button></div>
+      <div class="note" style="margin-top:4px">Earn batches above the auto-apply cap need an operator. Pending batches expire on TTL, and all of them expire if the desk goes silent.</div>
+      <div id="desk" style="margin-top:12px"></div>
+      <div style="font-weight:700;margin:14px 0 6px" class="row">Audit log <span class="sp"></span><a class="btn" href="/api/export.html" target="_blank">Evidence pack ↗</a></div>
+      <div class="feed" id="feed"></div>
+    </div>
+  </div>
+
+  <h2>Member experience · Base is a power company, not a battery company</h2>
+  <div class="grid c12">
+    <div class="phone">
+      <div class="row"><div class="hello">Your home · <select id="homeSel" style="border:0;font:inherit;color:var(--ink2)"></select></div></div>
+      <h3>What your battery did</h3>
+      <div class="receipt" id="receipt"></div>
+      <div class="shield"><div style="flex:1"><div style="font-weight:700">Protect my backup</div><div class="mute" style="font-size:12px" id="protectTxt">Cancels grid earning and locks your reserve at today's charge. One tap, any time.</div></div><button class="toggle" id="protect"><i></i></button></div>
+      <div style="font-weight:700;margin:6px 0">September statement</div>
+      <div class="stmt" id="stmt"></div>
+      <div class="note">Values are grid value created by your battery on real ERCOT prices, after efficiency losses and wear. How that value reaches a member's bill depends on the plan, and that's a question for Base.</div>
+    </div>
+    <div class="card why" id="memberWhy"></div>
+  </div>
+</main>
+<script>
+const $=id=>document.getElementById(id), Z=["LZ_HOUSTON","LZ_NORTH","LZ_SOUTH","LZ_WEST"], C={LZ_HOUSTON:"var(--hou)",LZ_NORTH:"var(--nor)",LZ_SOUTH:"var(--sou)",LZ_WEST:"var(--wes)"};
+const money=(v,d=2)=>(v<0?"−$":"$")+Math.abs(v).toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d});
+const signed=v=>(v>=0?"+":"")+money(v);
+const nice=z=>z.replace("LZ_","").toLowerCase().replace(/^./,c=>c.toUpperCase());
+let E=null, day="spike", home="LZ_HOUSTON", S=null;
+async function post(u){await fetch(u,{method:"POST"});tick()}
+function chaos(k){post(`/api/chaos/${k}?zone=${$("zoneSel").value}`)}
+
+function kpis(){const m=E.month,s=E.days.spike,q=E.days.quiet,z=E.zone_finding;
+ $("kpis").innerHTML=`
+ <div class="card kpi"><div class="l">WattGap vs fair schedule · Sep 2023, 30 real days</div><div class="v ${m.gap_vs_fair>=0?"pos":"neg"}">${signed(m.gap_vs_fair)}<span style="font-size:15px;color:var(--mute)"> /home</span></div><div class="s">${money(m.per_home.wattgap)} vs ${money(m.per_home.scheduled)} · won ${m.days_won}/${m.days} days · reserve never below ${Math.round(m.min_soc*100)}%</div></div>
+ <div class="card kpi"><div class="l">Quiet day · ${q.day}</div><div class="v ${q.gap_vs_fair>=0?"pos":"neg"}">${signed(q.gap_vs_fair)}</div><div class="s">${money(q.per_home.wattgap)} vs ${money(q.per_home.scheduled)} per home</div></div>
+ <div class="card kpi"><div class="l">Scarcity day · ${s.day}</div><div class="v ${s.gap_vs_fair>=0?"pos":"neg"}">${signed(s.gap_vs_fair)}</div><div class="s">${money(s.per_home.wattgap)} vs ${money(s.per_home.scheduled)} · WattGap sold too early (see chart)</div></div>
+ <div class="card kpi"><div class="l">Zone finding · ${s.day} scarcity</div><div class="v neg">${money(z.LZ_SOUTH.avg_vs_system,0)}</div><div class="s">LZ_SOUTH vs 4-zone avg over ${z.intervals} intervals ≥ $1,000/MWh (worst ${money(z.LZ_SOUTH.worst,0)})</div></div>`}
+
+function line(pts,w,h,max,min,color,width=2){const n=pts.length;return `<polyline fill="none" stroke="${color}" stroke-width="${width}" stroke-linejoin="round" points="${pts.map((v,i)=>`${40+i*(w-50)/(n-1)},${h-18-(v-min)/(max-min||1)*(h-34)}`).join(" ")}"/>`}
+function axis(w,h,max,min,fmt,labels){let g="";for(let k=0;k<=3;k++){const v=min+(max-min)*k/3,y=h-18-(v-min)/(max-min||1)*(h-34);g+=`<line x1="40" x2="${w-10}" y1="${y}" y2="${y}" stroke="#eef0f4"/><text x="4" y="${y+4}">${fmt(v)}</text>`}
+ labels.forEach((t,i)=>{if(i%16==0)g+=`<text x="${40+i*(w-50)/(labels.length-1)-12}" y="${h-2}">${t}</text>`});return g}
+function dayView(){const d=E.days[day],P=d.prices,w=820;
+ $("daySeg").innerHTML=Object.entries(E.days).map(([k,v])=>`<button class="${k==day?"on":""}" onclick="day='${k}';dayView()">${k=="spike"?"Scarcity":"Quiet"} · ${v.day}</button>`).join("");
+ const all=P.flatMap(p=>Z.map(z=>p[z])),max=Math.max(...all),min=Math.min(0,...all),t=P.map(p=>p.t);
+ const x0=40+68*(w-50)/95,x1=40+84*(w-50)/95;
+ $("priceChart").innerHTML=`<rect x="${x0}" y="8" width="${x1-x0}" height="204" fill="#fff4ea"/>`+axis(w,230,max,min,v=>"$"+Math.round(v).toLocaleString(),t)+Z.map(z=>line(P.map(p=>p[z]),w,230,max,min,C[z])).join("");
+ $("socChart").innerHTML=`<rect x="${x0}" y="8" width="${x1-x0}" height="94" fill="#fff4ea"/>`+axis(w,120,1,0,v=>Math.round(v*100)+"%",t)+line(d.soc.scheduled,w,120,1,0,"#9aa3b5")+line(d.soc.wattgap,w,120,1,0,"var(--amber)",2.5)+`<line x1="40" x2="${w-10}" y1="${120-18-0.2*86}" y2="${120-18-0.2*86}" stroke="var(--red)" stroke-dasharray="4 4"/><text x="${w-110}" y="${120-22-0.2*86}" style="fill:var(--red)">20% member reserve</text>`;
+ $("zoneTable").innerHTML=`<tr><th>Zone</th><th>Naive</th><th>Fair sched.</th><th>WattGap</th><th>Gap</th></tr>`+Z.map(z=>{const r=d.by_zone[z],g=r.wattgap.net-r.scheduled.net;return `<tr><td>${nice(z)}</td><td>${money(r.naive_overnight.net)}</td><td>${money(r.scheduled.net)}</td><td><b>${money(r.wattgap.net)}</b></td><td class="${g>=0?"pos":"neg"}">${signed(g)}</td></tr>`}).join("")+
+  `<tr><td><b>Avg home</b></td><td>${money(d.per_home.naive_overnight)}</td><td>${money(d.per_home.scheduled)}</td><td><b>${money(d.per_home.wattgap)}</b></td><td class="${d.gap_vs_fair>=0?"pos":"neg"}"><b>${signed(d.gap_vs_fair)}</b></td></tr>`;
+ const a=E.assumptions;
+ $("dayWhy").innerHTML=(day=="spike"?`<b>Honest read:</b> WattGap sold at 13:45 CT when prices first hit their top 10% of the past 24 h, and was at its reserve before the 18:30–19:30 peak. The even 5–9 PM schedule caught that peak. Across all 30 September days WattGap still wins ${E.month.days_won}. `:`<b>Quiet day:</b> small spreads, so after 90% round-trip losses and wear WattGap cycles only when it pays. `)+
+  `<br><span class="mute">Assumptions: ${a.capacity_kwh} kWh / ${a.power_kw} kW home battery, ${a.round_trip_eff*100}% round trip, $${a.degradation_per_kwh}/kWh wear, ${a.reserve_soc*100}% reserve, leftover charge valued at the day's median price. Fair schedule: ${a.fair_schedule}.</span>`}
+
+function member(){const m=E.members[home],sd=m.spike_day,ev=sd.events;
+ $("homeSel").innerHTML=Z.map(z=>`<option ${z==home?"selected":""} value="${z}">${nice(z)} (${z})</option>`).join("");
+ const big=ev.reduce((a,b)=>b.value>a.value?b:a,ev[0]||{value:0});
+ $("receipt").innerHTML=`<div class="mute" style="font-size:12px">Sep 6, 2023 · ERCOT scarcity evening</div><div class="v">${money(sd.net)}</div>
+  <div style="font-size:13px">earned for the grid by your battery. ${ev.length?`It sent <b>${ev.reduce((a,e)=>a+e.kwh,0).toFixed(1)} kWh</b> in ${ev.length} event${ev.length>1?"s":""}. The biggest ran ${big.start.slice(11,16)}–${big.end.slice(11,16)} CT, with prices up to <b>$${Math.round(big.peak_price).toLocaleString()}/MWh</b>.`:""}</div>
+  <div style="margin-top:10px;font-weight:700;color:var(--green)">✓ Your backup reserve never dropped below ${Math.round(sd.min_soc*100)}%.</div>`;
+ $("stmt").innerHTML=`<div><span>Grid value created</span><b>${money(m.net_value)}</b></div><div><span>A fixed evening schedule would have made</span><b>${money(m.fair_schedule_value)}</b></div>
+  <div><span>Energy sent to the grid</span><b>${m.kwh_out.toFixed(0)} kWh in ${m.events} events</b></div><div><span>Energy stored from cheap hours</span><b>${m.kwh_in.toFixed(0)} kWh</b></div>
+  <div><span>Battery wear charged</span><b>${money(m.wear)}</b></div><div><span>Lowest charge all month</span><b>${Math.round(m.min_soc*100)}% (reserve ${Math.round(m.reserve_soc*100)}%)</b></div>
+  <div><span>Best moment</span><b>${m.top_event.start.slice(5,10)} ${m.top_event.start.slice(11,16)} · ${money(m.top_event.value)}</b></div>`;
+ const all=Z.map(z=>E.members[z]);
+ $("memberWhy").innerHTML=`<div style="font-weight:700;font-size:16px;margin-bottom:8px;color:var(--ink)">Why this is a member product, not a battery dashboard</div>
+  <p>Members buy <b>power</b> from Base. What they want to know is simple: <b>will my lights stay on, what did the battery in my garage do, and can I trust it?</b> WattGap answers all three from the same audited facts the operator sees.</p>
+  <p><b>The receipt</b> is built from the dispatch ledger, so every number in it can be traced to a real ERCOT price and a logged decision. No LLM makes anything up.</p>
+  <p><b>Protect</b> is a guarantee, not a setting. One tap cancels every earn batch for the fleet on the live desk and raises each home's floor to its current charge. The battery firmware enforces that floor on its own, even if a bad command gets through.</p>
+  <p><b>Same battery, different value by zone.</b> September 2023 under WattGap: ${all.map(m=>`${nice(m.zone)} ${money(m.net_value)}`).join(" · ")}. South homes earned less because LZ_SOUTH cleared far below the other zones during scarcity. That's the congestion signal the operator desk sees first.</p>
+  <div style="font-weight:700;margin:14px 0 6px;color:var(--ink)">Every dispatch for this home on Sep 6, 2023</div>
+  <table><tr><th>When (CT)</th><th>kWh</th><th>Peak $/MWh</th><th>Energy $</th></tr>${ev.map(e=>`<tr><td>${e.start.slice(11,16)}–${e.end.slice(11,16)}</td><td>${e.kwh.toFixed(1)}</td><td>${Math.round(e.peak_price).toLocaleString()}</td><td>${money(e.value)}</td></tr>`).join("")}</table>
+  <div class="note">${ev[0]?ev[0].reason:""}</div>`}
+$("homeSel").onchange=e=>{home=e.target.value;member()};
+$("protect").onclick=()=>post(`/api/protect?on=${!(S&&S.fleet.protected)}`);
+$("play").onclick=()=>post(`/api/control/${S&&S.playing?"pause":"play"}`);
+
+function live(){const s=S,l=s.last||{};
+ $("clock").innerHTML=s.interval.slice(0,10)+" "+s.interval.slice(11,16)+" CT"+`<div class="mute" style="font-size:12px;font-weight:500">${Z.map(z=>`${nice(z)} $${Math.round(s.prices[z]).toLocaleString()}/MWh`).join(" · ")}</div>`;
+ $("target").textContent=(l.target_mw||0).toFixed(2);$("delivered").textContent=(l.delivered_mw||0).toFixed(2);$("healthy").textContent=`${l.healthy??"—"}/${l.total??""}`;
+ $("status").innerHTML=(l.alarm?`<div class="alarm">⚠ ${l.alarm}</div>`:(l.target_mw?`<div class="ok">✓ Commitment met: ${l.delivered_mw.toFixed(2)} MW from ${l.healthy} healthy units${l.batch?` · batch ${l.batch}`:""}</div>`:""))+(l.degraded||[]).map(d=>`<div class="deg">Degraded · ${d}</div>`).join("");
+ const H=s.history,mx=Math.max(0.5,...H.map(h=>Math.max(h.target,h.delivered)));
+ $("spark").innerHTML=H.length>1?line(H.map(h=>h.target),820,70,mx,0,"#9aa3b5",1.5)+line(H.map(h=>h.delivered),820,70,mx,0,"var(--amber)",2.5)+H.map((h,i)=>h.alarm?`<circle cx="${40+i*770/(H.length-1)}" cy="10" r="3" fill="var(--red)"/>`:"").join("")+`<text x="4" y="12">MW</text>`:"";
+ $("zones").innerHTML=Z.map(z=>{const u=s.fleet.units.filter(x=>x.zone==z),c=s.fleet.by_zone[z];return `<div class="zone"><h4><span style="color:${C[z]}">● ${nice(z)}</span><span>${c.healthy||0}/${u.length}</span></h4><div class="dots">${u.map(x=>`<div class="dot ${x.state=="healthy"?x.action:x.state}" title="${x.id} · ${x.state} · SoC ${Math.round(x.soc*100)}%"></div>`).join("")}</div></div>`}).join("");
+ $("play").textContent=s.playing?"Pause":"Play";
+ $("deskState").className="st "+(s.desk_alive?"approved":"expired");$("deskState").textContent=s.desk_alive?"desk online":"desk offline";
+ $("deskBtn").textContent=s.desk_alive?"Kill desk":"Revive desk";$("deskBtn").onclick=()=>chaos(s.desk_alive?"kill_desk":"revive_desk");
+ $("desk").innerHTML=s.desk.slice(0,5).map(b=>`<div class="batch"><div class="row"><span class="id">${b.id}</span><span class="mute">${b.kind} · ${b.target_mw.toFixed(2)} MW${b.zones.length?` · ${b.zones.map(nice).join(", ")}`:""}</span><span class="sp"></span><span class="st ${b.status}">${b.status}</span></div>
+   ${b.status=="pending"?`<div class="ttl"><i style="width:${Math.min(100,b.ttl_left_s/40*100)}%"></i></div><div class="row"><span class="mute" style="font-size:12px">expires in ${Math.ceil(b.ttl_left_s)} s</span><span class="sp"></span><button class="btn" onclick="post('/api/desk/${b.id}/reject')">Reject</button><button class="btn go" onclick="post('/api/desk/${b.id}/approve')">Approve</button></div>`:`<div class="mute" style="font-size:12px;margin-top:4px">${b.decided_by?`by ${b.decided_by}`:""}${b.ticks_run?` · ran ${b.ticks_run}/${b.ticks} ticks`:""}</div>`}
+   <div class="mute" style="font-size:12px;margin-top:4px">${b.reason}</div></div>`).join("")||`<div class="mute">No batches yet.</div>`;
+ $("protect").className="toggle"+(s.fleet.protected?" on":"");$("protectTxt").textContent=s.fleet.protected?"On: earning cancelled, reserve locked at the current charge.":"Cancels grid earning and locks your reserve at today's charge. One tap, any time.";
+ const cls=k=>/quarant|rejected|dead|expired|kill|forged|replayed|rogue/.test(k)?"bad":/approved|recovered|healed|revived/.test(k)?"good":/suspect|partition|stale|protect/.test(k)?"warn":"";
+ const rows=[];for(const e of s.audit.slice().reverse().filter(e=>e.kind!="dispatch"||e.alarm)){const last=rows[rows.length-1];
+  if(last&&last.kind==e.kind&&/^unit_(suspect|dead|recovered)$/.test(e.kind)){last.n++;continue}rows.push({...e,n:1})}
+ const txt=e=>e.n>1?`×${e.n} (${e.unit} …)`:[e.batch||e.unit||e.zone||"",e.why||e.alarm||(e.reported_soc!==undefined?`SoC ${e.reported_soc} vs physics ${e.physics_soc}`:"")].join(" ");
+ $("feed").innerHTML=rows.slice(0,40).map(e=>`<div class="${cls(e.kind)}">#${e.seq} ${e.actor.padEnd(10)} ${e.kind} ${txt(e)}</div>`).join("")}
+
+async function tick(){S=await (await fetch("/api/state")).json();live()}
+(async()=>{E=await (await fetch("/api/economics")).json();kpis();dayView();member();tick();setInterval(tick,1000)})();
+</script>
+</body>
+</html>
