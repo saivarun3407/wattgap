@@ -1,10 +1,29 @@
 {
-  "ercot_rtm_spp_2023-09.csv": {
+  "ercot_rtm_spp_2023-07_09.csv": {
     "source_file": "rpt.00013061.0000000000000000.20240101.081911295.RTMLZHBSPP_2023.zip",
-    "retrieved": "2026-09-25T11:31-05:00"
+    "retrieved": "2026-09-25T12:03-05:00"
   },
   "ercot_rtm_spp_2026-09-20_21.csv": {
     "source_files": "96 NP6-905-CD csv files per day",
-    "retrieved": "2026-09-25T11:33-05:00"
+    "retrieved": "2026-09-25T12:05-05:00"
+  },
+  "ercot_dam_spp_2023-07_09.csv": {
+    "source_file": "rpt.00013060.0000000000000000.20240101.081011828.DAMLZHBSPP_2023.zip",
+    "retrieved": "2026-09-25T12:06-05:00"
+  },
+  "ercot_dam_spp_2026-09-20_21.csv": {
+    "source_files": [
+      "cdr.00012331.0000000000000000.20260920.130058234.DAMSPNP4190_csv.zip",
+      "cdr.00012331.0000000000000000.20260919.123508286.DAMSPNP4190_csv.zip"
+    ],
+    "retrieved": "2026-09-25T12:06-05:00"
+  },
+  "ercot_load_profile_reshiwr.csv": {
+    "source_files": [
+      "ERCOT-Backcasted-Load-Profiles-2023.zip",
+      "ext.00000004.0000000000000000.20260922.160057050.BcstPrfl09212026.csv",
+      "ext.00000004.0000000000000000.20260921.160120308.BcstPrfl09202026.csv"
+    ],
+    "retrieved": "2026-09-25T12:06-05:00"
   }
 }
