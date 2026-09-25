@@ -7,11 +7,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date, timedelta
-from math import sqrt
+from functools import lru_cache
+from math import ceil, sqrt
 from statistics import median
 from typing import Callable
 
-from .data import INTERVAL_H, ZONES, Interval, day
+from .data import INTERVAL_H, ZONES, Interval, dam_day, day
 
 
 @dataclass(frozen=True)
@@ -131,27 +132,96 @@ CHARGE_PCT = 25  # charge when price is in the cheapest quarter of the trailing 
 DISCHARGE_PCT = 90  # discharge only in the top tenth
 
 
-def breakeven(ctx: Context) -> float:
+def breakeven(spec: Spec, charge_cost: float) -> float:
     """Lowest $/MWh at which selling beats the cost of having bought and worn the energy."""
-    spec = ctx.battery.spec
-    cheap = percentile(ctx.trailing, CHARGE_PCT)
-    return max(cheap, 0.0) / spec.round_trip_eff + spec.degradation_per_kwh * 1000
+    return max(charge_cost, 0.0) / spec.round_trip_eff + spec.degradation_per_kwh * 1000
 
 
-def aware(ctx: Context) -> Decision:
-    """WattGap: causal, uses only the trailing 24 h of this zone's real prices."""
+def trailing(ctx: Context) -> Decision:
+    """WattGap v1, kept as a comparison: causal, uses only the trailing 24 h of this zone's prices."""
     b = ctx.battery
-    if ctx.price <= percentile(ctx.trailing, CHARGE_PCT):
+    cheap = percentile(ctx.trailing, CHARGE_PCT)
+    if ctx.price <= cheap:
         return ("CHARGE", b.spec.power_kw)
-    if ctx.price >= max(percentile(ctx.trailing, DISCHARGE_PCT), breakeven(ctx)):
+    if ctx.price >= max(percentile(ctx.trailing, DISCHARGE_PCT), breakeven(b.spec, cheap)):
         return ("DISCHARGE", b.spec.power_kw)
     return HOLD
+
+
+@dataclass(frozen=True)
+class PlannerParams:
+    window_h: int  # discharge in this many of the day's most expensive DAM hours
+    spike_mult: float | None  # outside the plan, sell if real time beats the day's top DAM price by this
+
+
+# Chosen by scripts/select_params.py on Jul 2-Aug 31 2023 only (see docs/PARAMS.md).
+# September 2023 and the 2026 days were never used to choose them.
+PLANNER = PlannerParams(window_h=1, spike_mult=1.25)
+
+
+def refill_hours(spec: Spec) -> int:
+    """Whole hours at full power to refill from the reserve to full (2 h for the assumed battery)."""
+    return ceil((spec.max_soc - spec.reserve_soc) * spec.capacity_kwh / spec.leg_eff / spec.power_kw)
+
+
+@dataclass(frozen=True)
+class Plan:
+    charge: frozenset[int]  # CT hours
+    discharge: frozenset[int]
+    charge_cost: float  # mean DAM $/MWh over the charge hours
+    sell_price: float  # mean DAM $/MWh over the discharge hours
+    top_dam: float
+    dam: tuple[float, ...]
+
+
+@lru_cache(maxsize=None)
+def dam_plan(d: date, zone: str, window_h: int, spec: Spec = SPEC) -> Plan:
+    """Charge/discharge hours for one zone and day, from DAM prices published the day before."""
+    prices = [h[zone] for h in dam_day(d)]
+    ranked = sorted(range(24), key=prices.__getitem__)
+    charge, discharge = ranked[:refill_hours(spec)], ranked[-window_h:]
+    cost = sum(prices[h] for h in charge) / len(charge)
+    sell = sum(prices[h] for h in discharge) / len(discharge)
+    if sell < breakeven(spec, cost):  # the day-ahead spread doesn't pay for losses and wear
+        charge, discharge = [], []
+    return Plan(frozenset(charge), frozenset(discharge), cost, sell, max(prices), tuple(prices))
+
+
+def planned(params: PlannerParams) -> Policy:
+    """WattGap: plan windows on day-ahead prices, then adjust to real-time prices inside them."""
+
+    def policy(ctx: Context) -> Decision:
+        b, t = ctx.battery, ctx.interval.start
+        plan = dam_plan(t.date(), ctx.zone, params.window_h, b.spec)
+        floor_price = breakeven(b.spec, plan.charge_cost)
+        if t.hour in plan.discharge:
+            if ctx.price < floor_price:  # real time came in too cheap to be worth selling
+                return HOLD
+            # spread what's left evenly over the rest of today's discharge window
+            left_h = INTERVAL_H * sum(1 for h in plan.discharge for m in range(0, 60, 15)
+                                      if (h, m) >= (t.hour, t.minute))
+            return ("DISCHARGE", b.max_discharge_kw(left_h))
+        if t.hour in plan.charge:
+            ceiling = plan.sell_price * b.spec.round_trip_eff - b.spec.degradation_per_kwh * 1000
+            return ("CHARGE", b.spec.power_kw) if ctx.price <= ceiling else HOLD
+        if params.spike_mult and ctx.price >= params.spike_mult * max(plan.top_dam, floor_price):
+            return ("DISCHARGE", b.spec.power_kw)
+        return HOLD
+
+    return policy
 
 
 POLICIES: dict[str, Policy] = {
     "naive_overnight": naive_overnight,
     "scheduled": scheduled,
-    "wattgap": aware,
+    "trailing": trailing,
+    "wattgap": planned(PLANNER),
+}
+LABELS = {
+    "naive_overnight": "Naive overnight",
+    "scheduled": "Fair schedule",
+    "trailing": "WattGap v1 (trailing 24 h)",
+    "wattgap": "WattGap (day-ahead plan)",
 }
 
 
@@ -160,6 +230,17 @@ def reason(ctx: Context) -> str:
     sys_now = ctx.interval.system_price
     premium = ctx.price - sys_now
     parts = []
+    t = ctx.interval.start
+    plan = dam_plan(t.date(), ctx.zone, PLANNER.window_h, ctx.battery.spec)
+    bar = max(plan.top_dam, breakeven(ctx.battery.spec, plan.charge_cost))
+    if t.hour not in plan.discharge | plan.charge and PLANNER.spike_mult and ctx.price >= PLANNER.spike_mult * bar:
+        parts.append(f"{ctx.zone} real time ${ctx.price:,.0f}/MWh is over {PLANNER.spike_mult}x its top day-ahead "
+                     f"price (${plan.top_dam:,.0f})")
+    if t.hour in plan.discharge | plan.charge:
+        which = "highest" if t.hour in plan.discharge else "cheapest"
+        n = len(plan.discharge if t.hour in plan.discharge else plan.charge)
+        parts.append(f"day-ahead plan: {t.hour:02d}:00 is one of today's {n} {which} "
+                     f"DAM hours (${plan.dam[t.hour]:,.0f}/MWh)")
     if sys_now >= percentile(ctx.trailing_system, DISCHARGE_PCT):
         parts.append(f"system-wide: all-zone avg ${sys_now:,.0f}/MWh is in its top 10% of 24 h")
     elif sys_now <= percentile(ctx.trailing_system, CHARGE_PCT):
@@ -185,6 +266,16 @@ class Step:
     wear: float
     soc: float
     reason: str
+    home_kwh: float = 0.0  # household use this interval (ERCOT residential profile)
+
+    @property
+    def to_home_kwh(self) -> float:
+        """Discharge serves the home first; only the rest is exported past the meter."""
+        return min(max(self.grid_kwh, 0.0), self.home_kwh)
+
+    @property
+    def export_kwh(self) -> float:
+        return max(self.grid_kwh - self.home_kwh, 0.0)
 
 
 @dataclass
@@ -219,6 +310,14 @@ class Result:
     def kwh_charged(self) -> float:
         return -sum(s.grid_kwh for s in self.steps if s.grid_kwh < 0)
 
+    @property
+    def kwh_to_home(self) -> float:
+        return sum(s.to_home_kwh for s in self.steps)
+
+    @property
+    def kwh_exported(self) -> float:
+        return sum(s.export_kwh for s in self.steps)
+
 
 def trailing_prices(d: date, zone: str | None) -> list[float]:
     prior = day(d - timedelta(days=1))
@@ -228,9 +327,13 @@ def trailing_prices(d: date, zone: str | None) -> list[float]:
 
 
 def simulate(policy_name: str, zone: str, days: list[date], start_soc: float = 0.5,
-             spec: Spec = SPEC) -> Result:
-    """Replay consecutive days. Leftover energy is valued at the last day's median price."""
-    policy = POLICIES[policy_name]
+             spec: Spec = SPEC, policy: Policy | None = None) -> Result:
+    """Replay consecutive days. Leftover energy is valued at the last day's median price.
+
+    Energy the battery discharges is worth the zone price whether it offsets the home's own
+    use or is exported, so value doesn't change with the load; the split is reported.
+    """
+    policy = policy or POLICIES[policy_name]
     b = Battery(start_soc, spec)
     window = trailing_prices(days[0], zone)
     window_sys = trailing_prices(days[0], None)
@@ -253,6 +356,7 @@ def simulate(policy_name: str, zone: str, days: list[date], start_soc: float = 0
                 wear=max(grid, 0.0) * spec.degradation_per_kwh,
                 soc=b.soc,
                 reason=reason(ctx) if action != "HOLD" else "",
+                home_kwh=iv.home_kwh[zone],
             ))
             window.append(price)
             window_sys.append(iv.system_price)

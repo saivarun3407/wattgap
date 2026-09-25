@@ -3,10 +3,10 @@ from datetime import date, datetime
 import pytest
 
 from wattgap import econ
-from wattgap.data import SCENARIOS, ZONES, day, days_between
-from wattgap.econ import SPEC, Battery
+from wattgap.data import EVALUATION, SCENARIOS, SELECTION, ZONES, dam_day, day, days_between
+from wattgap.econ import PLANNER, SPEC, Battery
 
-MONTH = days_between(date(2023, 9, 1), date(2023, 9, 30))
+MONTH = days_between(*EVALUATION)
 
 
 @pytest.fixture(scope="module")
@@ -74,7 +74,7 @@ def test_baselines_are_sane(month_runs):
 def test_trailing_window_uses_prior_day_not_empty_history():
     d = SCENARIOS["quiet"]
     assert len(econ.trailing_prices(d, "LZ_WEST")) == 96
-    first = econ.simulate("wattgap", "LZ_WEST", [d]).steps[0]
+    first = econ.simulate("trailing", "LZ_WEST", [d]).steps[0]
     assert first.action in ("CHARGE", "HOLD", "DISCHARGE")  # decided against yesterday's prices
 
 
@@ -96,3 +96,66 @@ def test_reason_separates_system_from_zone():
 def test_gap_is_reported_against_fair_baseline():
     r = econ.compare_day(SCENARIOS["quiet"])
     assert r.gap_vs_fair == pytest.approx(r.net("wattgap") - r.net("scheduled"))
+
+
+def test_day_ahead_prices_are_real_hourly_and_complete():
+    for d in [*days_between(*SELECTION), *MONTH, *SCENARIOS.values()]:
+        hours = dam_day(d)
+        assert len(hours) == 24 and all(set(h) == set(ZONES) for h in hours)
+    assert dam_day(SCENARIOS["spike"])[19]["LZ_HOUSTON"] == 1271.22  # HE20 in ERCOT's own file
+
+
+def test_selection_and_evaluation_days_do_not_overlap():
+    assert SELECTION[1] < EVALUATION[0]
+    assert SCENARIOS["spike"] >= EVALUATION[0] and SCENARIOS["quiet"].year == 2026
+
+
+def test_plan_uses_only_day_ahead_prices_for_that_day():
+    d = SCENARIOS["spike"]
+    plan = econ.dam_plan(d, "LZ_WEST", PLANNER.window_h)
+    prices = [h["LZ_WEST"] for h in dam_day(d)]
+    assert plan.dam == tuple(prices)
+    assert len(plan.discharge) == PLANNER.window_h and len(plan.charge) == econ.refill_hours(SPEC) == 2
+    assert min(prices[h] for h in plan.discharge) >= max(prices[h] for h in plan.charge)
+    assert not plan.charge & plan.discharge
+
+
+def test_unprofitable_day_ahead_spread_plans_nothing(monkeypatch):
+    flat = [dict.fromkeys(ZONES, 30.0)] * 24
+    monkeypatch.setattr(econ, "dam_day", lambda d: flat)
+    econ.dam_plan.cache_clear()
+    try:
+        plan = econ.dam_plan(date(2099, 1, 1), "LZ_WEST", 1)
+        assert not plan.charge and not plan.discharge
+    finally:
+        econ.dam_plan.cache_clear()
+
+
+def test_planner_trades_only_in_windows_or_on_a_spike(month_runs):
+    for z in ZONES:
+        for s in month_runs[("wattgap", z)].steps:
+            t = datetime.fromisoformat(s.start)
+            plan = econ.dam_plan(t.date(), z, PLANNER.window_h)
+            if s.action == "CHARGE":
+                assert t.hour in plan.charge
+            if s.action == "DISCHARGE" and t.hour not in plan.discharge:
+                assert s.price >= PLANNER.spike_mult * plan.top_dam  # the real-time override
+            if s.action == "DISCHARGE" and t.hour in plan.discharge:
+                assert s.price >= econ.breakeven(SPEC, plan.charge_cost) - 1e-9
+
+
+def test_planner_is_causal_in_real_time():
+    """Changing prices after an interval can't change the decision taken in it."""
+    d = SCENARIOS["spike"]
+    iv = day(d)[60]  # 15:00 CT
+    ctx = econ.Context(iv, "LZ_HOUSTON", [0.0] * 96, [0.0] * 96, Battery(0.8))
+    other = econ.Context(iv, "LZ_HOUSTON", [9999.0] * 96, [9999.0] * 96, Battery(0.8))
+    assert econ.POLICIES["wattgap"](ctx) == econ.POLICIES["wattgap"](other)
+
+
+def test_home_load_is_real_and_splits_discharge():
+    res = econ.simulate("wattgap", "LZ_HOUSTON", MONTH[:7])
+    assert all(s.home_kwh > 0 for s in res.steps)
+    assert res.kwh_to_home + res.kwh_exported == pytest.approx(res.kwh_discharged)
+    for s in res.steps:
+        assert s.to_home_kwh <= s.home_kwh + 1e-12 and s.export_kwh >= 0
