@@ -1,34 +1,32 @@
-Canonical scope: [PROJECT.md](./PROJECT.md).
+# Remaining on-site plan (Sep 25–27, 2026)
 
-# 48h plan
+**Hard deadline:** submissions due **Sunday Sep 27, 11:00 AM CT** (Airtable). Aim to submit by 10:30 AM.
+**Office open:** Fri until 12:00 AM · Sat 8:00 AM–12:00 AM · Sun from 8:00 AM.
 
-Full product + track merge: see [PLAN.md](./PLAN.md) (FleetPulse Desk extends WattGap).
+## Already done (branch `hackathon-build`)
 
-**Before Friday**
+- [x] Real ERCOT data with provenance, fair baselines, zone finding (`make report`)
+- [x] Supervisor, heartbeats, reallocation, ALARM/degraded, chaos (kill, partition, stale feed, rogue, forged, replayed)
+- [x] Desk: TTL, approve/reject/protect, auto-apply cap, fails closed on desk death
+- [x] Signed commands with anti-replay; rogue SoC quarantine
+- [x] Evidence export, one-command demo (`make demo`), benchmark (`make bench`)
+- [x] Web UI with economics, live fleet, desk, member view (`make serve`)
+- [x] Day-ahead planner on ERCOT DAM prices, params chosen on Jul–Aug (`make params`)
+- [x] Per-device ed25519 keys with enrollment, pinning, revocation; devices as OS processes over TCP (`make demo-net`)
+- [x] Vectorized fleet math, per-zone commitments with re-commit, home load netting; sharded benchmark
+- [x] Member app: onboarding, receipt, statement, bill toggle (assumption), storm Protect; a11y and mobile
+- [x] README to the submission checklist; 59 tests, 96% coverage
 
-- [ ] Dump one **quiet day** + one **spike day** of ERCOT settlement prices (or GridStatus). Drop into `data/`. Keep `sample_prices.csv` as backup.
-- [ ] Fix sample/replay so **naive overnight hours exist** in the series (today’s sample starts at noon → naive $ = 0).
-- [ ] Optional: ERCOT public API key. Do not bet the demo on it.
-- [ ] `python3 sim/run.py` works on a clean laptop.
+## Still to do
 
-**Hours 0–6** — scanner + $ gap  
-Wire real CSV columns. Print top 10 opportunities. Naive vs aware $. **Sanity-check naive ≠ 0 on a full day.**
+| When | Item | Why |
+|---|---|---|
+| Fri 7 PM–12 AM | Run `make setup test demo serve` on the demo laptop; fix anything environment-specific | Completeness |
+| Sat 11 AM–1 PM | Base Office Hours: ask the questions in PROJECT.md | Track "Why", avoids invented claims |
+| Sat PM | Apply office-hours feedback to the receipt wording and baseline; re-run `make report` and update the README numbers from its output | Fit, honesty |
+| Sat evening | Rehearse the Loom script (`loom-script.md`, kept outside the repo) against the live UI | Everything is judged off the video |
+| Sat ~11 PM | **Record the Loom** (camera on, 4:00–4:30) | Hard requirement |
+| Sun 8–10 AM | Re-record if needed; fill in Airtable: title, video, repo link, screen capture, team roster, 150–300 word write-up; pick 2 tracks | Hard requirement |
+| Sun ≤ 10:30 AM | **Submit** | Deadline 11:00 AM |
 
-**Hours 6–14** — fleet MW target + failure  
-Supervisor target MW; `kill_west`; rebalance remaining or ALARM. Log.
-
-**Hours 14–22** — desk + TTL  
-Pending batch → Approve / Reject / Protect. Kill desk → expire pending (no execute).
-
-**Hours 22–30** — signed commands + rogue  
-Per-device identity, nonce/replay guard, false SoC spoof → quarantine.
-
-**Hours 30–38** — UI  
-One page: price chart, WattGap $, opportunity list, fleet MW, kill + desk buttons, receipt panel.
-
-**Hours 38–44** — export + ROI tab  
-Compliance JSON/HTML from logs. One-zone replay $ for sales story.
-
-**Hours 44–48** — freeze, 4-min script, sleep.
-
-**Cut first:** map, PJM, live-only API, ML spike model, extra agents, second pages.
+**Cut if behind:** UI polish, then extra chaos buttons. Never cut the tests, demo, README or Loom.

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23ff6a1a'/%3E%3Cpath d='M18 4 8 18h7l-2 10 10-14h-7z' fill='white'/%3E%3C/svg%3E">
+<title>WattGap · home batteries that keep their promises</title>
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header class="top">
+  <div class="wrap top-in">
+    <a class="logo" href="#main" aria-label="WattGap home"><span class="mark" aria-hidden="true">⚡</span>WattGap</a>
+    <nav aria-label="Sections">
+      <a href="#results">Results</a><a href="#fleet">Live fleet</a><a href="#member">Member app</a><a href="#evidence">Evidence</a>
+    </nav>
+    <div class="tracks" aria-label="Hackathon tracks"><span class="chip on">Orchestration</span><span class="chip on">Most Commercializable</span><span class="chip">engine · Open Grid Data</span></div>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero wrap" aria-labelledby="h-hero">
+    <p class="eyebrow">Base Power × AITX · real ERCOT data · simulated fleet</p>
+    <h1 id="h-hero">Home batteries that keep their promises: to the grid, and to the family inside.</h1>
+    <p class="lede">WattGap plans on ERCOT's day-ahead prices and runs a home-battery fleet that fails closed. Then it tells every member, in plain words, what their battery did.</p>
+    <div class="kpis" id="kpis" aria-live="polite"></div>
+  </section>
+
+  <section id="results" class="wrap sec" aria-labelledby="h-results">
+    <div class="sec-head"><h2 id="h-results">Real days, fair baseline</h2>
+      <p>ERCOT real-time 15-minute load-zone prices, one home per zone, 40 kWh / 20 kW battery, 90% round trip, wear cost, 20% reserve. The baseline is a fixed schedule, not a strawman.</p></div>
+    <div class="grid g-21">
+      <div class="card">
+        <div class="row wrapx"><div class="seg" id="daySeg" role="tablist" aria-label="Choose a day"></div><span class="sp"></span>
+          <div class="legend" aria-hidden="true"><span><b style="background:var(--hou)"></b>Houston</span><span><b style="background:var(--nor)"></b>North</span><span><b style="background:var(--sou)"></b>South</span><span><b style="background:var(--wes)"></b>West</span><span><b class="dash"></b>Houston day-ahead</span></div></div>
+        <figure class="chart"><svg id="priceChart" viewBox="0 0 820 240" role="img" aria-label="Real-time prices by load zone"></svg></figure>
+        <div class="legend small" aria-hidden="true"><span><b style="background:var(--amber)"></b>WattGap (day-ahead plan)</span><span><b style="background:var(--violet)"></b>v1 (trailing 24 h)</span><span><b style="background:#9aa3b5"></b>Fair schedule</span><span><b class="band-dis"></b>planned discharge hour</span><span><b class="band-fair"></b>5–9 PM schedule</span></div>
+        <figure class="chart"><svg id="socChart" viewBox="0 0 820 130" role="img" aria-label="Battery state of charge, Houston home"></svg></figure>
+      </div>
+      <div class="card">
+        <h3>Net $ per home</h3>
+        <div class="tscroll"><table id="zoneTable"></table></div>
+        <div class="read" id="dayWhy"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="fleet" class="wrap sec" aria-labelledby="h-fleet">
+    <div class="sec-head"><h2 id="h-fleet">Live fleet: 400 independent devices, per-zone commitments</h2>
+      <p>Replaying the real 2023-09-06 scarcity afternoon. Every device holds its own ed25519 key, and every command and reply is signed. Break something and watch the supervisor react.</p></div>
+    <div class="grid g-21">
+      <div class="card" id="fleetCard">
+        <div class="row wrapx"><div><div class="lbl">Replay clock</div><div class="clock" id="clock">—</div></div><span class="sp"></span><div class="lbl" id="prices"></div></div>
+        <div class="metrics">
+          <div class="metric"><div class="lbl">Committed</div><div class="num" id="target">0.00</div><div class="unit">MW, per-zone batch</div></div>
+          <div class="metric"><div class="lbl">Delivered</div><div class="num" id="delivered">0.00</div><div class="unit">MW from batteries</div></div>
+          <div class="metric"><div class="lbl">Past the meter</div><div class="num" id="export">0.00</div><div class="unit">MW after home use</div></div>
+          <div class="metric"><div class="lbl">Healthy</div><div class="num" id="healthy">—</div><div class="unit" id="total"></div></div>
+        </div>
+        <div id="status" role="status" aria-live="assertive"></div>
+        <svg id="spark" viewBox="0 0 820 64" role="img" aria-label="Committed versus delivered MW, recent ticks"></svg>
+        <div class="zones" id="zones"></div>
+        <div class="legend small" aria-hidden="true"><span><b style="background:var(--amber)"></b>discharging</span><span><b style="background:var(--blue)"></b>charging</span><span><b style="background:#dfe3ea"></b>idle</span><span><b style="background:var(--yellow)"></b>suspect</span><span><b style="background:#1f2633"></b>dead</span><span><b style="background:var(--red)"></b>quarantined</span><span><b style="background:#8b5cf6"></b>revoked</span></div>
+        <div class="toolbar" role="group" aria-label="Replay controls">
+          <button class="btn" id="play">Pause</button><button class="btn" data-post="/api/control/step">Step</button><button class="btn" data-post="/api/control/reset">Reset</button>
+        </div>
+        <div class="toolbar chaos" role="group" aria-label="Chaos controls">
+          <label class="lbl" for="zoneSel">Zone</label>
+          <select id="zoneSel" class="btn"><option>LZ_HOUSTON</option><option>LZ_NORTH</option><option selected>LZ_SOUTH</option><option>LZ_WEST</option></select>
+          <button class="btn danger" data-chaos="kill">Kill 30% of zone</button>
+          <button class="btn danger" data-chaos="partition">Partition zone</button>
+          <button class="btn danger" data-chaos="stale">Stale price feed</button>
+          <button class="btn danger" data-chaos="rogue">Rogue SoC</button>
+          <button class="btn danger" data-chaos="forge">Forged cmd</button>
+          <button class="btn danger" data-chaos="replay">Replayed cmd</button>
+          <button class="btn danger" data-chaos="redirect">Redirected cmd</button>
+          <button class="btn" data-chaos="revoke_quarantined">Revoke quarantined keys</button>
+          <button class="btn warn" id="stormBtn">Storm mode: Protect all</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="row"><h3>Dispatch desk</h3><span class="sp"></span><span id="deskState" class="st"></span><button class="btn danger" id="deskBtn"></button></div>
+        <p class="note">Earn batches above 0.25 MW need an operator. A pending batch expires on its TTL. If the desk goes silent, every pending batch expires and nothing discharges.</p>
+        <div id="desk" aria-live="polite"></div>
+        <div class="row" style="margin-top:14px"><h3>Audit log</h3><span class="sp"></span><a class="btn" href="/api/export.html" target="_blank" rel="noopener">Evidence pack ↗</a></div>
+        <div class="feed" id="feed" tabindex="0" aria-label="Audit log, newest first"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="member" class="wrap sec" aria-labelledby="h-member">
+    <div class="sec-head"><h2 id="h-member">The member app</h2>
+      <p>Base is a power company, not a battery company. Members don't want a battery dashboard. They want to know three things: will the lights stay on, what did the battery do, and can they trust it?</p></div>
+    <div class="grid g-12">
+      <div class="phone" id="phone">
+        <div class="notch" aria-hidden="true"></div>
+        <div class="app">
+          <div class="app-top"><div><div class="lbl">Your home · Houston</div><div class="app-title">Your battery</div></div><button class="linkbtn" id="replayOnb">Tour</button></div>
+          <div class="livebar" id="liveHome" aria-live="polite"></div>
+          <div class="tabs" role="tablist" aria-label="Member app">
+            <button role="tab" aria-selected="true" data-tab="today">Today</button><button role="tab" aria-selected="false" data-tab="month">Month</button><button role="tab" aria-selected="false" data-tab="bill">Bill</button><button role="tab" aria-selected="false" data-tab="protect">Protect</button>
+          </div>
+          <div class="panel" id="tab-today" role="tabpanel"></div>
+          <div class="panel" id="tab-month" role="tabpanel" hidden></div>
+          <div class="panel" id="tab-bill" role="tabpanel" hidden></div>
+          <div class="panel" id="tab-protect" role="tabpanel" hidden></div>
+        </div>
+        <div class="onb" id="onb" role="dialog" aria-modal="true" aria-labelledby="onbTitle" hidden></div>
+      </div>
+      <div class="card read" id="memberWhy"></div>
+    </div>
+  </section>
+
+  <section id="evidence" class="wrap sec" aria-labelledby="h-evidence">
+    <div class="sec-head"><h2 id="h-evidence">Evidence for this run</h2>
+      <p>Every decision, approval, expiry, alarm, re-commit, quarantine and revocation is one line in an append-only JSONL log. This is the live run's summary.</p></div>
+    <div class="card"><div class="evi" id="evi"></div>
+      <div class="row" style="margin-top:12px"><a class="btn" href="/api/export.html" target="_blank" rel="noopener">Open HTML evidence pack ↗</a><a class="btn" href="/api/export" target="_blank" rel="noopener">JSON ↗</a></div></div>
+  </section>
+</main>
+<footer class="wrap foot">
+  <p>Prices, day-ahead prices and home load shape are real ERCOT public data (see <code>data/PROVENANCE.md</code>). Batteries, the fleet and the member are simulated. "Grid value" isn't a bill credit: how value reaches a member is Base's call, and the Bill tab says so.</p>
+</footer>
+<script src="/static/app.js"></script>
+</body>
+</html>
