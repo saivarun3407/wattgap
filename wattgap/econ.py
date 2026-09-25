@@ -327,7 +327,7 @@ def trailing_prices(d: date, zone: str | None) -> list[float]:
 
 
 def simulate(policy_name: str, zone: str, days: list[date], start_soc: float = 0.5,
-             spec: Spec = SPEC, policy: Policy | None = None) -> Result:
+             spec: Spec = SPEC, policy: Policy | None = None, explain: bool = True) -> Result:
     """Replay consecutive days. Leftover energy is valued at the last day's median price.
 
     Energy the battery discharges is worth the zone price whether it offsets the home's own
@@ -355,8 +355,8 @@ def simulate(policy_name: str, zone: str, days: list[date], start_soc: float = 0
                 cash=grid * price / 1000,
                 wear=max(grid, 0.0) * spec.degradation_per_kwh,
                 soc=b.soc,
-                reason=reason(ctx) if action != "HOLD" else "",
-                home_kwh=iv.home_kwh[zone],
+                reason=reason(ctx) if explain and action != "HOLD" else "",
+                home_kwh=iv.home_kwh.get(zone, 0.0),
             ))
             window.append(price)
             window_sys.append(iv.system_price)
