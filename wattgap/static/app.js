@@ -314,6 +314,36 @@ document.querySelector(".tabs").addEventListener("keydown", e => {
   n.focus(); selectTab(n.dataset.tab);
 });
 
+/* ---------- where & when (locations, Scarcity Radar, Signals) ---------- */
+function renderGrid(G) {
+  const L = G.locations, years = [...new Set(L.map(r => +r.year))].sort(), pts = [...Z, "HB_HUBAVG"];
+  const v = (p, y) => +(L.find(r => r.point === p && +r.year === y) || {}).pf_usd_per_mw || 0;
+  const max = Math.max(...L.map(r => +r.pf_usd_per_mw)), h = 220, bw = (W - X0 - 10) / years.length / 5;
+  let g = axis(h, 0, max, x => "$" + Math.round(x / 1000) + "k", []);
+  years.forEach((y, i) => {
+    const x0 = X0 + i * bw * 5;
+    Z.forEach((z, j) => { const y1 = yAt(v(z, y), h, 0, max);
+      g += `<rect x="${x0 + j * bw}" y="${y1}" width="${bw - 2}" height="${h - 20 - y1}" fill="${COLOR[z]}"><title>${nice(z)} ${y}: ${money(v(z, y), 0)}</title></rect>`; });
+    g += `<text x="${x0 + bw * 1.2}" y="${h - 4}">${y}</text>`;
+  });
+  $("locChart").innerHTML = g;
+  $("locTable").innerHTML = `<tr><th>Year</th>${pts.map(p => `<th>${p === "HB_HUBAVG" ? "Hub avg" : nice(p)}</th>`).join("")}<th>Top 10 days (North)</th></tr>` +
+    years.map(y => `<tr><td>${y}</td>${pts.map(p => `<td>${money(v(p, y) / 1000, 1)}k</td>`).join("")}<td>${pct(+L.find(r => r.point === "LZ_NORTH" && +r.year === y).top10_share)}</td></tr>`).join("");
+  const R = G.radar, live = R.live;
+  $("radarLive").innerHTML = live ? `<p class="note">Tomorrow (${esc(live.operating_day)}), scored ${esc(live.computed.slice(0, 16).replace("T", " "))} CT from today's DAM: ` +
+    Z.map(z => `${nice(z)} ${pct(live.zones[z].score)}`).join(" · ") + ` (flag at ${pct(live.threshold)}).</p>` : "";
+  $("radarTable").innerHTML = `<tr><th>Year</th><th>Window</th><th>Fair</th><th>Planner</th><th>+ Radar</th><th>Flagged / spike zone-days</th></tr>` +
+    R.capture.map(r => `<tr><td>${r.year}</td><td>${r.window}</td><td>${pct(+r.fair_share)}</td><td>${pct(+r.planner_share)}</td><td>${pct(+r.radar_share)}</td><td>${r.flagged_zone_days} / ${r.spike_zone_days}</td></tr>`).join("");
+  const days = [...new Set(R.flagged_heldout.map(r => r.day))];
+  $("radarWhy").innerHTML = `<p>Share of the perfect-foresight bound each policy captured (home battery, four zones). The radar is a ${R.model.features.length}-feature logistic regression on day-ahead data, fit on ${R.model.train_years.join("–")} only.
+    In the held-out years it flagged ${days.length ? days.join(", ") : "no day"}${days.length ? " (every flagged zone spiked)" : ""}. The day-ahead planner already sells into those spikes, so the radar adds almost nothing to the money: DAM prices are both the radar's input and the planner's plan.</p>`;
+  const S = G.signals, c = S.cases;
+  const b = S.look_ahead_bias.find(r => r.lead_min === 60) || S.look_ahead_bias.at(-1);
+  $("signalsWhy").innerHTML = `<p>${S.rtd_runs.toLocaleString()} RTD runs, ${esc(S.first_run.slice(0, 10))} to ${esc(S.last_run.slice(0, 16).replace("T", " "))} CT: all the history ERCOT's free MIS keeps. No settled price reached $1,000 (highest ${money(Math.max(...Object.values(S.max_settled)), 0)}), so at production thresholds there were ${c[0].alarms} warning episodes and all were false alarms.
+    At a $100 threshold: ${c[2].hits} of ${c[2].events} spikes warned ahead, ${c[2].false_alarms} of ${c[2].alarms} warnings false.
+    RTD's forward prices run high: at a ${b.lead_min}-minute lead the mean error is ${money(b.mean_error)}/MWh, and only ${b.held_500} of ${b.indicated_500} indications of $500+ held.</p>`;
+}
+
 async function refresh() {
   S = await (await fetch("/api/state")).json();
   renderLive(); renderHomeLive();
@@ -323,6 +353,7 @@ async function refresh() {
   E = await (await fetch("/api/economics")).json();
   renderKpis(); renderDay(); renderToday(); renderMonth(); renderBill(); renderMemberWhy();
   await refresh(); renderProtect(); renderEvidence();
+  renderGrid(await (await fetch("/api/grid")).json());
   if (!localStorage.getItem("wattgap.onboarded")) openOnb();
   setInterval(refresh, 1000);
   setInterval(renderEvidence, 5000);

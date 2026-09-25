@@ -47,12 +47,94 @@ Economic assumptions (stated, not Base Core specifications):
 - 15-minute settlement at load-zone real-time prices
 - Energy left at the end of a run valued at that day's median zone price, so policies aren't rewarded for selling off their starting charge
 
+## Where a battery earns most (location analytics)
+
+`make locations` (needs `make archive`, ~2 min) writes `data/derived/locations.csv` and `docs/locations.svg`. This is an **upper bound, not a forecast**: a 1 MW / 2 MWh battery with 90% round trip, $0.02/kWh wear and perfect foresight of a whole year of 15-minute real-time prices, solved as one linear program per zone and year (scipy HiGHS). It starts empty, and leftover energy at year end is worth nothing. The fair schedule (charge 00:00–06:00, discharge 17:00–21:00 CT) runs on the same battery for comparison.
+
+![Upper bound by zone and year](docs/locations.svg)
+
+| Year | Houston | North | South | West | Hub avg | Fair schedule (4-zone avg) | Top 10 days (H / N / S / W) | Best day (North) |
+|---|---:|---:|---:|---:|---:|---:|---|---|
+| 2019 | $103.7k | $103.2k | $110.4k | $145.7k | $101.1k | $0.4k | 61 / 61 / 57 / 44% | 2019-08-15 (16%) |
+| 2020 | $36.4k | $32.7k | $50.7k | $80.2k | $32.9k | −$1.8k | 45 / 45 / 33 / 25% | 2020-08-15 (8%) |
+| 2021 | $127.8k | $117.9k | $115.6k | $124.5k | $114.5k | −$15.5k | 64 / 65 / 67 / 63% | 2021-02-15 (19%) |
+| 2022 | $137.7k | $105.9k | $98.9k | $132.4k | $109.7k | $17.9k | 42 / 51 / 41 / 41% | 2022-07-13 (10%) |
+| 2023 | $179.0k | $178.3k | $147.7k | $221.7k | $173.0k | $60.0k | 53 / 54 / 56 / 43% | 2023-08-17 (8%) |
+| 2024 | $50.0k | $52.6k | $62.5k | $78.4k | $51.2k | $11.3k | 47 / 46 / 43 / 32% | 2024-05-08 (12%) |
+| 2025 | $33.9k | $39.8k | $35.9k | $55.9k | $35.3k | −$0.8k | 24 / 28 / 28 / 21% | 2025-01-15 (7%) |
+
+$ per MW per year. "Top 10 days" is the share of the year's upper bound earned on its ten best days.
+
+- **LZ_WEST has the highest bound in 5 of 7 years.** Houston led in 2021 and 2022. West also has by far the most negative-price 15-minute intervals every year (1,093 in 2019, 3,533 in 2022), and those are what a battery charges on.
+- **The money is concentrated.** In most years 40–65% of the bound comes from ten days. 2025 is the flattest year (21–28%).
+- **The fair schedule captures little and can lose money.** In 2021 it's −$15.5k because Uri priced the overnight charge hours at $9,000/MWh for days.
+- **Checking an earlier claim that "North beats Houston".** The quick hourly-average method behind it reproduces exactly (North 2024 $54,338 vs Houston $51,720; 2025 $45,701 vs $39,869, column `quick_estimate_usd_per_mw`). But it only holds for 2024–2025. On the LP bound Houston beat North every year from 2019 to 2023, so "North beats Houston" is **not a stable finding**.
+- **Limits:** perfect foresight, price-taker (a 1 MW battery doesn't move prices), energy only (no ancillary services), load-zone and hub prices only, not nodes.
+
+## Scarcity Radar (day-ahead spike score)
+
+`make scarcity` (needs `make archive`, ~100 s). Each afternoon, score tomorrow for each zone: will real time reach **$1,000/MWh** at least once?
+- **Features, all public by 13:30 CT the day before:** log of the DAM max for the zone, log(DAM max / DAM median), and log of the max DAM ancillary-service price (RRS / NSPIN / ECRS). ERCOT closes DAM bids at 10:00 and posts results by 13:30. No real-time data goes into the score (a test checks this).
+- **Model:** a 4-coefficient ridge logistic regression. **Fit on 2019–2023. 2024–2025 were held out** and never used to choose anything.
+- **Policy:** on a flagged day, the day-ahead planner may keep energy back for a spike and refill when real time is as cheap as its planned charge hours. The threshold, hold share, spike multiple and refill switch were grid-searched on 2019–2023 only. Chosen: **threshold 0.7, hold 0, spike multiple 1.0, refill on**. Full grid in [docs/PARAMS.md](docs/PARAMS.md).
+
+Share of the perfect-foresight upper bound captured, home battery (40 kWh / 20 kW), average of the four zones:
+
+| Year | Window | Spike zone-days | Flagged | Hits | AUC | Upper bound $/home | Fair | Planner | Planner + radar |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| 2019 | train | 78 | 28 | 12 | 0.872 | $2,036.82 | 0.1% | 62.5% | 62.5% |
+| 2020 | train | 44 | 0 | 0 | 0.743 | $916.54 | −3.5% | 51.9% | 51.9% |
+| 2021 | train | 66 | 24 | 24 | 0.903 | $2,174.85 | −12.0% | 44.5% | 54.1% |
+| 2022 | train | 76 | 4 | 0 | 0.842 | $2,116.73 | 13.0% | 49.2% | 49.2% |
+| 2023 | train | 134 | 45 | 41 | 0.900 | $3,336.30 | 28.7% | 58.3% | 59.3% |
+| **2024** | **held out** | 42 | 4 | 4 | 0.852 | $1,117.05 | 15.9% | 62.6% | **62.6%** |
+| **2025** | **held out** | 19 | 0 | 0 | 0.657 | $730.28 | −2.3% | 48.4% | **48.4%** |
+
+- **Honest result: the radar adds no held-out money.** The score ranks days well (AUC 0.85 in 2024), but at the chosen threshold it flagged only 2024-05-08, in all four zones, and all four spiked. The planner already sold into that spike (19:00–20:30 CT), so both made $699.74/home in 2024 (fair schedule $177.18). In 2025 nothing crossed the threshold. The train-period gains come mostly from Uri (2021) and August 2023.
+- **Where the headroom actually is.** In 2024 the planner captured 74% of the bound on spike days ($337.42 of $453.84) but 55% on other days ($362.24 of $663.20). In 2025, 39% ($49.97 of $128.25) vs 50% ($302.69 of $602.03). Most of the missing money is on ordinary days, not spikes.
+- **Disclosure 1:** the first version of the flagged-day policy (refill up to the charge ceiling, a hold multiple) picked threshold 0.85, flagged only Uri and 8 zone-days in 2019, flagged nothing in the held-out years and matched the planner. We redesigned the refill rule **after seeing that full table, held-out rows included**. The new values were still chosen on 2019–2023 only.
+- **Disclosure 2:** the threshold grid was widened once, adding 0.05 and 0.1.
+- **Live:** `make radar-live` scores tomorrow from the DAM files ERCOT posted today (NP4-190-CD, NP4-188-CD) and writes `data/derived/radar_live.json`. For 2026-09-26 it scored 0.017–0.020 in every zone, not flagged.
+- **Forecast vintages (context only).** Load, wind and solar forecasts as they stood at 10:00 CT the day before would be natural features. Free MIS keeps them for about 7 days, and the archive API returns 401 without a key. `make vintages` saves the 8 days available (2026-09-19 → 09-26) to `data/derived/forecast_vintages.csv`, including a load-model spread of 1,203–6,062 MW. That's not enough history to fit or test, so they aren't in the model.
+
+## Signals (real-time early warning)
+
+`wattgap/warn.py` turns ERCOT's 5-minute feeds into **HOLD / PRE-CHARGE / DISCHARGE-NOW** per zone:
+- **Stale feed → HOLD.** Any input older than 10 minutes means the zone holds.
+- **DISCHARGE-NOW:** the next RTD indicative interval (NP6-970-CD) is at or above $1,000/MWh.
+- **PRE-CHARGE:** any RTD interval in the next 30 minutes is at or above $500, the real-time reserve price adder (NP6-323-CD) is at least $1/MWh, or physical responsive capability (PRC, from ERCOT's grid-conditions dashboard) is under 3,000 MW.
+- **Wired into the fleet:** DISCHARGE-NOW makes the zone propose an earn batch through the dispatch desk, labelled "early warning {zone}: …". The approval cap still applies. PRE-CHARGE turns HOLD into CHARGE. If the feed goes stale, the whole fleet holds and the degraded banner says "stale price feed (N s old): HOLD all". Both are tested.
+- `make warn-live` polls every 5 minutes. `make feeds && make warn` runs the backtest.
+
+**Backtest.** Free MIS only keeps about 5–7 days of these feeds: 1,600 RTD runs from 2026-09-20 00:00 to 09-25 13:15 CT, 528 settled 15-minute intervals per zone (NP6-905-CD). A snapshot only uses adders and lambdas posted at or before that RTD run. A spike counts as warned if a warning was up before its interval started, and a warning episode is a false alarm if no spike followed within an hour.
+
+| Spike = settled ≥ | Pre-charge at | Spikes | Warned ahead | Median lead | Warning episodes | False alarms |
+|---|---|---:|---:|---:|---:|---:|
+| $1,000 | $500 | 0 | 0 | — | 103 | 103 |
+| $200 | $200 | 3 | 3 | 60 min (window cap) | 113 | 109 |
+| $100 | $100 | 24 | 23 | 59.9 min | 175 | 162 |
+
+- **There were no $1,000 spikes in the window**, so the headline setting is untested on its main target. The highest settled prices were $720.54 (South) and $199.74–$212.53 elsewhere. At lower bars the warnings come early but most are false alarms. As a battery trigger, a false PRE-CHARGE costs little. A false DISCHARGE-NOW would cost more, and that's why it still goes through the desk.
+- **RTD reads high the further ahead it looks** (indicative minus settled, all zones):
+
+| Lead | Mean error $/MWh | Median | RTD ≥ $500 that settled ≥ $500 |
+|---|---:|---:|---:|
+| 15 min | +16.24 | +2.87 | 29 of 85 |
+| 30 min | +37.33 | +3.60 | 29 of 183 |
+| 60 min | +131.75 | +11.05 | 26 of 513 |
+| 120 min | +469.68 | +39.12 | 14 of 1,513 |
+
+- **Disclosure:** the 30-minute look-ahead was chosen **after seeing this table**, on the same six days it's reported on. There's no held-out period for Signals.
+- **Limits:** the PRC dashboard only shows now, so PRC isn't in the backtest. Six days in late September isn't a scarcity season.
+
+More ideas on the same data, each with a data review and phrased as a hypothesis to test: [docs/IDEAS.md](docs/IDEAS.md). One was tested there: on the 17 UT home-game Saturdays of 2023–2025, Austin's price (LZ_AEN) didn't move measurably around kickoff relative to the surrounding zone. The difference was +$0.05/MWh, 95% CI [−$1.61, +$0.83], permutation p = 0.98 (`make events`).
+
 ## Quick start
 
 ```bash
 git clone https://github.com/saivarun3407/wattgap && cd wattgap
 make setup        # python3 -m venv .venv && pip install -r requirements.txt   (Python 3.11+)
-make test         # 59 tests, ~15 s
+make test         # 84 tests, ~20 s
 make demo         # the scripted story, ~8 s; writes out/evidence.{json,html} and out/audit.jsonl
 make demo-net     # 400 batteries as 40 OS processes over localhost TCP, with a real kill -9; ~3 s
 make report       # economics on the real days
@@ -60,9 +142,20 @@ make serve        # web UI at http://localhost:8000
 make cov          # tests with line coverage
 make params       # re-run the planner parameter search on the Jul-Aug selection days
 make bench        # tick latency and throughput, 1k to 10M units (a few minutes)
+
+# grid analytics (network needed only for the fetch steps)
+make archive      # ERCOT yearly RT / DAM / AS price archives 2018-2025 -> data/archive (git-ignored)
+make locations    # perfect-foresight bound per zone and year (~2 min)
+make scarcity     # fit the Scarcity Radar on 2019-2023, backtest 2024-2025 (~100 s)
+make radar-live   # score tomorrow from today's DAM
+make vintages     # forecast vintages MIS still keeps (~7 days)
+make feeds        # RTD / adder / lambda / settled feeds MIS still keeps -> data/feeds (git-ignored)
+make warn         # Signals backtest on the downloaded feeds
+make warn-live    # poll ERCOT every 5 minutes
+make events       # UT home-game Saturdays vs other fall Saturdays, Austin prices
 ```
 
-No API keys. No network access at runtime; the ERCOT data is committed in `data/`.
+No API keys. The demo, report, UI and tests need no network; the ERCOT data they use is committed in `data/`. The grid analytics read the yearly archives and 5-minute feeds, which are large or reproducible and git-ignored, so fetch them with `make archive` / `make feeds`. Their results are committed in `data/derived/`, and the UI and tests read those.
 
 ## The demo (`make demo`)
 
@@ -223,16 +316,21 @@ Everything is **real ERCOT data** for LZ_HOUSTON, LZ_NORTH, LZ_SOUTH and LZ_WEST
 | `data/ercot_dam_spp_2026-09-20_21.csv` | NP4-190-CD DAM Settlement Point Prices (reportTypeId 12331), hourly | 2026-09-20 → 09-21 |
 | `data/ercot_load_profile_reshiwr.csv` | ERCOT Backcasted Load Profiles (2023 workbook; ZP18-68-M daily extract), RESHIWR average premise, 15-min kWh | same days |
 
+| `data/archive/{rt,dam,as}_{2018..2025}.csv.gz` (git-ignored, `make archive`) | NP6-785-ER (13061), NP4-180-ER (13060), NP4-181-ER DAM AS prices (13091), all zones and hubs | 2018-01-01 → 2025-12-31 |
+| `data/feeds/{rtd,adders,lambda,spp}.csv` (git-ignored, `make feeds`) | NP6-970-CD RTD indicative LMPs, NP6-323-CD RT price adders, NP6-322-CD SCED system lambda, NP6-905-CD settled prices | RTD/adders/lambda 2026-09-20 00:00 → 09-25 13:20 CT; settled 09-17 → 09-25 (what MIS kept) |
+| `data/derived/*.csv, *.json` | outputs of `make locations`, `make scarcity`, `make vintages`, `make warn`, `make radar-live` | see PROVENANCE |
+
 Retrieved 2026-09-25 12:03–12:06 CT (`data/retrieved_at.json`) with `scripts/fetch_ercot.py` (`make data`). The battery fleet is **simulated**. No Base data or API is used.
 
 ## Tests
 
-`make test` runs **59 tests** in about 15 s. `make cov` reports **96% line coverage** of `wattgap/` (1,569 statements, 69 missed). That includes the device host processes and the benchmark shards.
+`make test` runs **84 tests** in about 20 s, with or without the git-ignored archives. `make cov` reports **94% line coverage** of `wattgap/` (2,059 statements, 127 missed; the gaps are mostly the events backtest driver, which needs the archive, and the benchmark). That includes the device host processes and the benchmark shards.
 - **Economics / planner:** reserve never violated; energy conservation with efficiency; $ matches a hand calculation; baselines sane; Central-time hours; causality (future real-time prices can't change a past decision); every day has a complete DAM; charge and discharge windows never overlap; an unprofitable DAM spread plans nothing; the home-load split adds up to discharged energy.
 - **Orchestration:** fleet size not hard-coded; no discharge without desk approval; auto-apply only under the cap; expired batches never execute; per-zone headroom; kill 30% of the batch zone and it rebalances to target; a broken zone re-commits lower with an alarm; partition goes suspect, dead, recovered; stale feed holds; rogue SoC quarantined, then revoked; forged, replayed and redirected commands rejected; fleet Protect and member Protect; devices never breach their reserve; exports net out home use; the audit is append-only JSONL.
 - **Vectorized math and shards:** allocation proportional per zone with shortfall; usable kW respects reserve and power; the physics check catches a lie but not rounding; heartbeat transitions; sharded math and the sharded signed path.
 - **Security:** ed25519 valid / tampered / wrong key / replayed / stale / wrong addressee; registry enrollment, roster check, key pinning, proof of possession, revocation.
 - **Network:** 24 devices in 8 processes over TCP, then a real SIGKILL of one host.
+- **Grid analytics:** the LP bound beats any schedule and matches a hand case; the quick method is reproduced; the radar score and policy are causal (tomorrow's real time can't change today's score or an earlier decision); the committed train (2019–2023) and held-out (2024–2025) windows don't overlap; the Signals rules, the adder join (only earlier postings), look-ahead bias and the backtest on synthetic feed files; the fleet proposes an early-warning batch through the desk and holds everything on a stale feed; a synthetic archive with a DST day reads back correctly.
 - **Entry points:** `make demo`, `make demo-net`, `make report` and the web API, end to end.
 
 ## Known limitations
@@ -242,6 +340,8 @@ Retrieved 2026-09-25 12:03–12:06 CT (`data/retrieved_at.json`) with `scripts/f
 - **The economics are energy-only** at load-zone prices. No ancillary services, retail tariff, demand charges or settlement nuance. Battery specs and wear cost are assumptions.
 - **"Congestion" is inferred** from load-zone spreads, not from ERCOT shadow prices.
 - **Bill impact is illustrative.** The member app computes grid value. How it reaches a bill depends on Base's plan, which we don't know, and the UI says so.
+- **Grid analytics are backtests on public prices.** The location numbers are perfect-foresight upper bounds. The Scarcity Radar adds no money on the held-out years 2024–2025. Signals has only six days of feed history, with no $1,000 spike in it, and its look-ahead was chosen on those same days. Forecast-vintage history needs ERCOT's Public API key, which we don't have. PRC is live-only.
+- **The grid section of the UI hasn't been screenshotted yet.**
 - **Keys live in memory**, not in a secure element. There's no key rotation ceremony or certificate chain. The supervisor key comes from an environment variable.
 - **The network is localhost TCP**, not LTE or MQTT. There's no TLS; integrity comes from the per-message signatures. State lives in memory apart from the JSONL audit.
 - **The signed fleet is crypto-bound:** one process handles about 3.5k devices per tick-second. Sharding is benchmarked but the live supervisor runs in one process.
@@ -269,6 +369,6 @@ The old `sim/` and the synthetic data were deleted. Exact commit times: `git log
 
 ## Repo map
 
-`README.md` (this file) · [`PROJECT.md`](PROJECT.md) spec · [`HACK.md`](HACK.md) remaining on-site plan · [`docs/HACKATHON.md`](docs/HACKATHON.md) official rules and rubric · [`docs/PARAMS.md`](docs/PARAMS.md) parameter selection · [`data/PROVENANCE.md`](data/PROVENANCE.md) · `wattgap/` code · `tests/` · `scripts/` (data fetch, parameter search, screenshots) · `docs/shots/` screenshots · [`docs/archive/`](docs/archive) pre-event planning (not claims)
+`README.md` (this file) · [`PROJECT.md`](PROJECT.md) spec · [`HACK.md`](HACK.md) remaining on-site plan · [`docs/HACKATHON.md`](docs/HACKATHON.md) official rules and rubric · [`docs/PARAMS.md`](docs/PARAMS.md) parameter selection · [`docs/IDEAS.md`](docs/IDEAS.md) ideas and data reviews · [`data/PROVENANCE.md`](data/PROVENANCE.md) · `wattgap/` code · `tests/` · `scripts/` (data and archive fetch, parameter search, locations, scarcity, screenshots) · `data/derived/` analysis outputs · `docs/shots/` screenshots · [`docs/archive/`](docs/archive) pre-event planning (not claims)
 
 MIT licensed.
