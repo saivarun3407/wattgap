@@ -1,0 +1,10 @@
+{
+  "ercot_rtm_spp_2023-09.csv": {
+    "source_file": "rpt.00013061.0000000000000000.20240101.081911295.RTMLZHBSPP_2023.zip",
+    "retrieved": "2026-09-25T11:31-05:00"
+  },
+  "ercot_rtm_spp_2026-09-20_21.csv": {
+    "source_files": "96 NP6-905-CD csv files per day",
+    "retrieved": "2026-09-25T11:33-05:00"
+  }
+}
