@@ -16,12 +16,14 @@ SECTIONS = {
     "rejections": ("batch_rejected",),
     "expirations": ("batch_expired",),
     "alarms": (),  # dispatch lines that carried an alarm
+    "recommits": ("commitment_recommitted",),
     "quarantines": ("unit_quarantined",),
-    "security": ("command_rejected", "telemetry_rejected"),
+    "revocations": ("key_revoked",),
+    "security": ("command_rejected", "telemetry_rejected", "enroll_rejected"),
     "unit_health": ("unit_suspect", "unit_dead", "unit_recovered"),
-    "member_protect": ("protect_on", "protect_off"),
+    "member_protect": ("protect_on", "protect_off", "protect_home_on", "protect_home_off"),
     "chaos": ("kill_zone", "partition", "partition_healed", "stale_feed", "rogue_unit",
-              "forged_command", "replayed_command", "desk_killed", "desk_revived"),
+              "forged_command", "replayed_command", "redirected_command", "desk_killed", "desk_revived"),
 }
 
 
@@ -34,6 +36,7 @@ def build_pack(audit: AuditLog, economics: dict | None = None) -> dict:
         "events": len(audit.events),
         **{f"{k}_count": len(v) for k, v in pack.items() if isinstance(v, list)},
         "mwh_delivered": round(sum(e["delivered_mw"] for e in pack["decisions"]) * 0.25, 3),
+        "mwh_exported": round(sum(e["export_mw"] for e in pack["decisions"]) * 0.25, 3),
         "discharge_without_live_batch": len(unsafe),
     }
     if economics:
@@ -58,12 +61,14 @@ def write(pack: dict, out_dir: Path) -> tuple[Path, Path]:
         ("Rejections", pack["rejections"], ["seq", "actor", "batch", "target_mw"]),
         ("Expired batches (fail-closed)", pack["expirations"], ["seq", "batch", "why"]),
         ("Alarms", pack["alarms"], ["seq", "interval", "target_mw", "delivered_mw", "healthy", "alarm"]),
+        ("Zone re-commitments", pack["recommits"], ["seq", "batch", "zone", "from_mw", "to_mw", "why"]),
         ("Quarantines", pack["quarantines"], ["seq", "unit", "zone", "reported_soc", "physics_soc"]),
+        ("Revoked device keys", pack["revocations"], ["seq", "unit", "why"]),
         ("Rejected messages", pack["security"], ["seq", "actor", "kind", "why", "unit"]),
-        ("Member Protect", pack["member_protect"], ["seq", "kind", "actor", "cancelled"]),
+        ("Member Protect", pack["member_protect"], ["seq", "kind", "actor", "unit", "reserve", "cancelled"]),
         ("Chaos injected", pack["chaos"], ["seq", "kind", "zone", "killed", "of", "unit", "ticks"]),
         ("Every dispatch decision", pack["decisions"],
-         ["seq", "interval", "batch", "target_mw", "delivered_mw", "charging_mw", "healthy", "alarm"]),
+         ["seq", "interval", "batch", "target_mw", "delivered_mw", "export_mw", "charging_mw", "healthy", "alarm"]),
     ]
     sections = "".join(f"<h2>{t}</h2>{_rows(ev, cols)}" for t, ev, cols in parts)
     hpath.write_text(f"""<!doctype html><meta charset=utf-8><title>WattGap evidence pack</title>
@@ -73,7 +78,8 @@ td,th{{border-bottom:1px solid #e3e6ec;padding:4px 8px;text-align:left;font-size
 <h1>WattGap evidence pack</h1><p class=muted>Generated {s['generated']} · {s['events']} audit events · simulated fleet on real ERCOT prices</p>
 <div class=kpi><b>{s['decisions_count']}</b>dispatch decisions</div><div class=kpi><b>{s['approvals_count']}</b>approvals</div>
 <div class=kpi><b>{s['expirations_count']}</b>expired (fail-closed)</div><div class=kpi><b>{s['alarms_count']}</b>alarm ticks</div>
-<div class=kpi><b>{s['quarantines_count']}</b>quarantined units</div><div class=kpi><b>{s['security_count']}</b>rejected messages</div>
+<div class=kpi><b>{s['recommits_count']}</b>zone re-commitments</div>
+<div class=kpi><b>{s['quarantines_count']}</b>quarantined units</div><div class=kpi><b>{s['revocations_count']}</b>revoked keys</div><div class=kpi><b>{s['security_count']}</b>rejected messages</div>
 <div class=kpi><b>{s['discharge_without_live_batch']}</b>discharges without a live batch</div>
 {sections}""")
     return jpath, hpath

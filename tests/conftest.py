@@ -3,6 +3,9 @@ import asyncio
 import pytest
 
 from wattgap.live import Sim
+from wattgap.security import new_key
+
+KEY = new_key()
 
 
 @pytest.fixture
@@ -11,8 +14,8 @@ def run():
     return asyncio.run
 
 
-async def make_sim(size: int = 40, start: str = "13:30", **kw) -> Sim:
-    sim = Sim(start=start, size=size, secret=b"test-secret", reply_timeout=0.02, **kw)
+async def make_sim(size: int = 40, start: str = "14:30", **kw) -> Sim:
+    sim = Sim(start=start, size=size, key=KEY, reply_timeout=0.02, **kw)
     await sim.start()
     return sim
 

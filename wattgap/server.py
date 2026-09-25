@@ -11,7 +11,9 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 
+from . import fleetmath as fm
 from . import report
 from .data import ZONES
 from .desk import Clock
@@ -21,6 +23,7 @@ from .live import Sim
 STATIC = Path(__file__).resolve().parent / "static"
 EXPORT_DIR = Path(__file__).resolve().parents[1] / "out" / "ui-export"
 TICK_S = 2.0  # one replayed 15-minute interval every 2 real seconds
+MEMBER_HOME = "core-00000"  # the home shown in the member app (LZ_HOUSTON)
 
 
 class App:
@@ -32,7 +35,7 @@ class App:
         if getattr(self, "sim", None):
             await self.sim.stop()
         # real clock: desk TTLs and heartbeats count in real seconds, shortened for a live demo
-        self.sim = Sim(start="13:00", size=400, clock=Clock(), desk_ttl_s=40.0, desk_timeout_s=6.0,
+        self.sim = Sim(start="14:15", size=400, clock=Clock(), desk_ttl_s=40.0, desk_timeout_s=6.0,
                        reply_timeout=0.1)
         await self.sim.start()
 
@@ -57,6 +60,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="WattGap", lifespan=lifespan)
+app.mount("/static", StaticFiles(directory=STATIC), name="static")
 
 
 @app.get("/")
@@ -71,7 +75,7 @@ def economics() -> dict:
 
 @app.get("/api/state")
 def live_state() -> dict:
-    return {**state.sim.view(), "playing": state.playing}
+    return {**state.sim.view(), "playing": state.playing, "home": state.sim.fleet.home_view(MEMBER_HOME)}
 
 
 @app.post("/api/control/{action}")
@@ -98,9 +102,12 @@ def chaos(kind: str, zone: str = "LZ_HOUSTON") -> dict:
         "kill": lambda: len(f.kill_zone(zone, 0.3)),
         "partition": lambda: f.partition(zone, ticks=3),
         "stale": lambda: f.stale_feed(ticks=2),
-        "rogue": lambda: f.make_rogue(),
-        "forge": lambda: state.sim.forge_command(),
-        "replay": lambda: state.sim.replay_command(),
+        "rogue": lambda: f.make_rogue(zone),
+        "revoke_quarantined": lambda: [f.revoke(u, "quarantined unit; key revoked by operator") or u
+                                       for u in f.ids if f.state[f.index[u]] == fm.QUARANTINED],
+        "forge": lambda: state.sim.forge_command(zone),
+        "replay": lambda: state.sim.replay_command(zone),
+        "redirect": lambda: state.sim.redirect_command(zone),
         "kill_desk": state.sim.kill_desk,
         "revive_desk": state.sim.revive_desk,
     }
@@ -121,9 +128,15 @@ def desk(batch_id: str, decision: str) -> dict:
 
 
 @app.post("/api/protect")
-def protect(on: bool = True) -> dict:
-    state.sim.fleet.protect(on)
-    return {"ok": True, "protected": on}
+def protect(on: bool = True, scope: str = "home") -> dict:
+    """scope=home: the member app's own home. scope=fleet: operator storm mode for every home."""
+    if scope == "home":
+        state.sim.fleet.protect_home(MEMBER_HOME, on)
+    elif scope == "fleet":
+        state.sim.fleet.protect(on)
+    else:
+        raise HTTPException(400, "scope must be home or fleet")
+    return {"ok": True, "protected": on, "scope": scope}
 
 
 @app.get("/api/export")

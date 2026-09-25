@@ -5,3 +5,8 @@ requires-python = ">=3.11"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["wattgap"]
+parallel = true
+patch = ["subprocess", "fork", "_exit"]

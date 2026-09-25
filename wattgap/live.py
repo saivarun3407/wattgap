@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
 from datetime import date, timedelta
 from pathlib import Path
 
@@ -10,19 +9,21 @@ from .audit import AuditLog
 from .data import SCENARIOS, ZONES, day
 from .desk import Clock, Desk, VirtualClock
 from .fleet import Fleet, TickReport
-from .security import device_key, fleet_secret, sign
+from .security import new_key, sign, supervisor_key
 
 SECONDS_PER_TICK = 15.0  # desk/crypto time that passes per replayed 15-minute interval
 
 
 class Sim:
     def __init__(self, d: date = SCENARIOS["spike"], start: str = "12:00", size: int = 400,
-                 clock: Clock | None = None, audit_path: Path | None = None, secret: bytes | None = None,
-                 reply_timeout: float | None = None, desk_ttl_s: float = 90.0, desk_timeout_s: float = 20.0):
+                 clock: Clock | None = None, audit_path: Path | None = None, key=None,
+                 reply_timeout: float | None = None, desk_ttl_s: float = 90.0, desk_timeout_s: float = 20.0,
+                 transport=None):
         self.clock = clock or VirtualClock()
         self.audit = AuditLog(audit_path)
         self.desk = Desk(self.clock, self.audit, ttl_s=desk_ttl_s, heartbeat_timeout_s=desk_timeout_s)
-        self.fleet = Fleet(self.clock, self.audit, self.desk, secret or fleet_secret(), size=size)
+        self.fleet = Fleet(self.clock, self.audit, self.desk, key or supervisor_key(), size=size,
+                           transport=transport)
         if reply_timeout is not None:
             self.fleet.reply_timeout = reply_timeout
         self.day = d
@@ -32,8 +33,7 @@ class Sim:
         self.desk_alive = True
 
     async def start(self) -> None:
-        self.fleet.start()
-        await asyncio.sleep(0)
+        await self.fleet.start()
 
     async def stop(self) -> None:
         await self.fleet.stop()
@@ -65,23 +65,31 @@ class Sim:
         self.audit.write(self.clock.now(), "operator", "desk_revived")
 
     def _healthy_in(self, zone: str) -> str:
-        return next(u for u, r in self.fleet.records.items() if r.state == "healthy" and r.zone == zone)
+        f = self.fleet
+        return next(u for u in f.zone_ids(zone) if f.state[f.index[u]] == 0 and u in f.transport.last_sent)
 
     def forge_command(self, zone: str = "LZ_SOUTH") -> str:
-        """Put a discharge command signed with the wrong key on a healthy unit's wire."""
+        """Put a discharge command signed with an attacker's key on a healthy unit's wire."""
         uid = self._healthy_in(zone)
-        bad_key = device_key(b"attacker-guess", uid)
-        body = {"tick": self.fleet.tick_no, "action": "DISCHARGE", "kw": 20.0, "reserve": 0.0}
-        self.fleet.net.inboxes[uid].put_nowait(sign(bad_key, uid, body, self.clock.now()))
+        body = {"tick": self.fleet.tick_no, "action": "DISCHARGE", "kw": 20.0, "reserve": 0.0,
+                "interval": self.interval.start.isoformat()}
+        self.fleet.transport.inject(uid, sign(new_key(), uid, body, self.clock.now()))
         self.audit.write(self.clock.now(), "chaos", "forged_command", unit=uid)
         return uid
 
     def replay_command(self, zone: str = "LZ_WEST") -> str:
         """Re-send a command a unit already executed (captured off the wire)."""
         uid = self._healthy_in(zone)
-        self.fleet.net.inboxes[uid].put_nowait(self.fleet.net.last_sent[uid])
+        self.fleet.transport.inject(uid, self.fleet.transport.last_sent[uid])
         self.audit.write(self.clock.now(), "chaos", "replayed_command", unit=uid)
         return uid
+
+    def redirect_command(self, zone: str = "LZ_HOUSTON") -> tuple[str, str]:
+        """Deliver one unit's genuine, supervisor-signed command to a different unit."""
+        a, b = self.fleet.zone_ids(zone)[:2]
+        self.fleet.transport.inject(b, self.fleet.transport.last_sent[a])
+        self.audit.write(self.clock.now(), "chaos", "redirected_command", unit=b, from_unit=a)
+        return a, b
 
     def view(self) -> dict:
         iv = self.interval
@@ -90,11 +98,13 @@ class Sim:
             "interval": iv.start.isoformat(),
             "prices": iv.prices,
             "desk_alive": self.desk.alive,
+            "desk_ttl_s": self.desk.ttl_s,
             "desk": self.desk.view(),
             "fleet": self.fleet.view(),
             "last": self.fleet.history[-1].__dict__ if self.fleet.history else None,
             "history": [{"t": h.interval[11:16], "target": round(h.target_mw, 3),
-                         "delivered": round(h.delivered_mw, 3), "alarm": bool(h.alarm)}
+                         "delivered": round(h.delivered_mw, 3), "export": round(h.export_mw, 3),
+                         "alarm": bool(h.alarm)}
                         for h in self.fleet.history[-40:]],
             "audit": self.audit.events[-60:],
         }

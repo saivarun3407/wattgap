@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import itertools
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .audit import AuditLog
 
@@ -40,6 +40,7 @@ class Batch:
     expires: float  # a pending batch dies at this time
     reason: str
     zones: tuple[str, ...] = ()
+    zone_mw: dict[str, float] = field(default_factory=dict)  # per-zone commitment (earn batches)
     status: str = PENDING
     ticks_run: int = 0
     decided_by: str = ""
@@ -47,6 +48,7 @@ class Batch:
     def view(self, now: float) -> dict:
         return {
             "id": self.id, "kind": self.kind, "target_mw": round(self.target_mw, 3), "zones": self.zones,
+            "zone_mw": {z: round(mw, 3) for z, mw in self.zone_mw.items()},
             "status": self.status, "reason": self.reason, "ticks": self.ticks,
             "ticks_run": self.ticks_run, "decided_by": self.decided_by,
             "ttl_left_s": max(0.0, round(self.expires - now, 1)) if self.status == PENDING else None,
@@ -75,9 +77,10 @@ class Desk:
 
     # -- lifecycle
     def submit(self, kind: str, target_mw: float, ticks: int, reason: str,
-               zones: tuple[str, ...] = ()) -> Batch:
+               zones: tuple[str, ...] = (), zone_mw: dict[str, float] | None = None) -> Batch:
         now = self.clock.now()
-        b = Batch(f"B{next(self._ids):03d}", kind, target_mw, ticks, now, now + self.ttl_s, reason, zones)
+        b = Batch(f"B{next(self._ids):03d}", kind, target_mw, ticks, now, now + self.ttl_s, reason, zones,
+                  dict(zone_mw or {}))
         if kind == "earn" and self.protected:
             b.status, b.decided_by = REJECTED, "protect"
         elif kind == "charge" or (target_mw <= self.auto_cap_mw and self.alive):
@@ -135,6 +138,16 @@ class Desk:
         self.sweep()
         return next((b for b in self.batches.values()
                      if b.kind == kind and b.status in (PENDING, *LIVE)), None)
+
+    def recommit(self, b: Batch, zone: str, mw: float, why: str) -> None:
+        """Lower one zone's commitment on a live batch after it broke. Lowering only ever
+        reduces discharge, so it needs no new approval; raising would."""
+        old = b.zone_mw.get(zone, 0.0)
+        mw = min(mw, old)
+        b.zone_mw[zone] = mw
+        b.target_mw = sum(b.zone_mw.values())
+        self.audit.write(self.clock.now(), "supervisor", "commitment_recommitted", batch=b.id, zone=zone,
+                         from_mw=round(old, 3), to_mw=round(mw, 3), why=why)
 
     def tick_done(self, b: Batch) -> None:
         b.ticks_run += 1
