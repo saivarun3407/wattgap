@@ -1,0 +1,250 @@
+{
+ "rtd_runs": 1600,
+ "first_run": "2026-09-20T00:00:03-05:00",
+ "last_run": "2026-09-25T13:15:03-05:00",
+ "settled_intervals_per_zone": 528,
+ "max_settled": {
+  "LZ_HOUSTON": 199.74,
+  "LZ_NORTH": 212.53,
+  "LZ_SOUTH": 720.54,
+  "LZ_WEST": 206.47
+ },
+ "cases": [
+  {
+   "spike_at": 1000.0,
+   "precharge_at": 500.0,
+   "events": 0,
+   "hits": 0,
+   "median_lead_min": null,
+   "alarms": 103,
+   "false_alarms": 103,
+   "zone_runs": {
+    "HOLD": 6026,
+    "PRE-CHARGE": 374,
+    "DISCHARGE-NOW": 0
+   }
+  },
+  {
+   "spike_at": 200.0,
+   "precharge_at": 200.0,
+   "events": 3,
+   "hits": 3,
+   "median_lead_min": 60.0,
+   "alarms": 113,
+   "false_alarms": 109,
+   "zone_runs": {
+    "HOLD": 5959,
+    "PRE-CHARGE": 373,
+    "DISCHARGE-NOW": 68
+   }
+  },
+  {
+   "spike_at": 100.0,
+   "precharge_at": 100.0,
+   "events": 24,
+   "hits": 23,
+   "median_lead_min": 59.9,
+   "alarms": 175,
+   "false_alarms": 162,
+   "zone_runs": {
+    "HOLD": 5418,
+    "PRE-CHARGE": 737,
+    "DISCHARGE-NOW": 245
+   }
+  }
+ ],
+ "look_ahead_bias": [
+  {
+   "lead_min": 5,
+   "n": 6400,
+   "mean_error": 0.0,
+   "median_error": 0.0,
+   "indicated_500": 31,
+   "held_500": 31
+  },
+  {
+   "lead_min": 10,
+   "n": 6396,
+   "mean_error": 10.68,
+   "median_error": 2.98,
+   "indicated_500": 55,
+   "held_500": 30
+  },
+  {
+   "lead_min": 15,
+   "n": 6392,
+   "mean_error": 16.24,
+   "median_error": 2.87,
+   "indicated_500": 85,
+   "held_500": 29
+  },
+  {
+   "lead_min": 20,
+   "n": 6388,
+   "mean_error": 21.76,
+   "median_error": 2.93,
+   "indicated_500": 112,
+   "held_500": 28
+  },
+  {
+   "lead_min": 25,
+   "n": 6384,
+   "mean_error": 28.72,
+   "median_error": 3.17,
+   "indicated_500": 146,
+   "held_500": 29
+  },
+  {
+   "lead_min": 30,
+   "n": 6380,
+   "mean_error": 37.33,
+   "median_error": 3.6,
+   "indicated_500": 183,
+   "held_500": 29
+  },
+  {
+   "lead_min": 35,
+   "n": 6376,
+   "mean_error": 47.04,
+   "median_error": 4.1,
+   "indicated_500": 233,
+   "held_500": 29
+  },
+  {
+   "lead_min": 40,
+   "n": 6372,
+   "mean_error": 58.62,
+   "median_error": 4.9,
+   "indicated_500": 266,
+   "held_500": 29
+  },
+  {
+   "lead_min": 45,
+   "n": 6368,
+   "mean_error": 72.77,
+   "median_error": 5.66,
+   "indicated_500": 311,
+   "held_500": 29
+  },
+  {
+   "lead_min": 50,
+   "n": 6364,
+   "mean_error": 91.93,
+   "median_error": 6.97,
+   "indicated_500": 368,
+   "held_500": 28
+  },
+  {
+   "lead_min": 55,
+   "n": 6360,
+   "mean_error": 111.65,
+   "median_error": 8.5,
+   "indicated_500": 438,
+   "held_500": 27
+  },
+  {
+   "lead_min": 60,
+   "n": 6356,
+   "mean_error": 131.75,
+   "median_error": 11.05,
+   "indicated_500": 513,
+   "held_500": 26
+  },
+  {
+   "lead_min": 65,
+   "n": 6352,
+   "mean_error": 154.1,
+   "median_error": 13.98,
+   "indicated_500": 588,
+   "held_500": 25
+  },
+  {
+   "lead_min": 70,
+   "n": 6348,
+   "mean_error": 170.27,
+   "median_error": 16.46,
+   "indicated_500": 628,
+   "held_500": 24
+  },
+  {
+   "lead_min": 75,
+   "n": 6344,
+   "mean_error": 185.89,
+   "median_error": 17.84,
+   "indicated_500": 666,
+   "held_500": 23
+  },
+  {
+   "lead_min": 80,
+   "n": 6340,
+   "mean_error": 202.6,
+   "median_error": 20.05,
+   "indicated_500": 743,
+   "held_500": 22
+  },
+  {
+   "lead_min": 85,
+   "n": 6336,
+   "mean_error": 222.59,
+   "median_error": 23.29,
+   "indicated_500": 844,
+   "held_500": 21
+  },
+  {
+   "lead_min": 90,
+   "n": 6332,
+   "mean_error": 242.26,
+   "median_error": 24.83,
+   "indicated_500": 942,
+   "held_500": 20
+  },
+  {
+   "lead_min": 95,
+   "n": 6328,
+   "mean_error": 269.99,
+   "median_error": 26.79,
+   "indicated_500": 1059,
+   "held_500": 19
+  },
+  {
+   "lead_min": 100,
+   "n": 6324,
+   "mean_error": 308.44,
+   "median_error": 28.97,
+   "indicated_500": 1129,
+   "held_500": 18
+  },
+  {
+   "lead_min": 105,
+   "n": 6320,
+   "mean_error": 347.83,
+   "median_error": 32.05,
+   "indicated_500": 1225,
+   "held_500": 17
+  },
+  {
+   "lead_min": 110,
+   "n": 6316,
+   "mean_error": 388.62,
+   "median_error": 34.5,
+   "indicated_500": 1329,
+   "held_500": 16
+  },
+  {
+   "lead_min": 115,
+   "n": 6312,
+   "mean_error": 421.05,
+   "median_error": 37.03,
+   "indicated_500": 1406,
+   "held_500": 15
+  },
+  {
+   "lead_min": 120,
+   "n": 6308,
+   "mean_error": 469.68,
+   "median_error": 39.12,
+   "indicated_500": 1513,
+   "held_500": 14
+  }
+ ]
+}
