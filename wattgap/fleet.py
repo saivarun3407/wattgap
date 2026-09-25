@@ -27,6 +27,7 @@ COMMIT_FRACTION = 0.7  # commit 70% of healthy capacity per zone; the rest is fa
 BATCH_TICKS = 4  # an approved earn batch covers one hour of 15-minute intervals
 REPLY_IDLE_TIMEOUT_S = 0.25  # stop waiting once no reply has arrived for this long
 ENROLL_TIMEOUT_S = 20.0
+FEED_STALE_S = 600.0  # a price feed whose own timestamp is older than this means HOLD everything
 
 
 @dataclass
@@ -68,6 +69,8 @@ class Fleet:
         self.protected_homes: set[str] = set()
         self.history: list[TickReport] = []
         self.stale_feed_ticks = 0
+        self.feed_at: float | None = None  # the price feed's own timestamp (epoch s), when a live feed is wired in
+        self.warnings: dict = {}  # zone -> latest warn.Signal (Signals app), if wired in
         self.partition_ticks = 0
         self.tick_no = 0
 
@@ -162,6 +165,9 @@ class Fleet:
             return
         parts = (reason(Context(iv, z, trailing[z][-96:], trailing_sys[-96:], Battery(0.5))) for z in zone_mw)
         why = "; ".join(dict.fromkeys(p for r in parts for p in r.split("; ")))
+        warned = [f"early warning {z}: {self.warnings[z].why}" for z in zone_mw
+                  if z in self.warnings and self.warnings[z].action == "DISCHARGE-NOW"]
+        why = "; ".join([*warned, why])
         self.desk.submit("earn", sum(zone_mw.values()), BATCH_TICKS, why, tuple(zone_mw), zone_mw)
 
     async def tick(self, iv: Interval, trailing: dict[str, list[float]], trailing_sys: list[float]) -> TickReport:
@@ -169,11 +175,18 @@ class Fleet:
         now = self.clock.now()
         degraded, alarms = [], []
         zone_actions = self._zone_actions(iv, trailing, trailing_sys)
-        stale = self.stale_feed_ticks > 0
+        for z, sig in self.warnings.items():  # early warning: an input to the plan, never a dispatch
+            if sig.action == "DISCHARGE-NOW" and z in zone_actions:
+                zone_actions[z] = "DISCHARGE"  # proposes an earn batch; the desk's approval rules still apply
+            elif sig.action == "PRE-CHARGE" and zone_actions.get(z) == "HOLD":
+                zone_actions[z] = "CHARGE"
+        feed_age = None if self.feed_at is None else now - self.feed_at
+        stale = self.stale_feed_ticks > 0 or (feed_age is not None and feed_age > FEED_STALE_S)
         if stale:
-            self.stale_feed_ticks -= 1
+            self.stale_feed_ticks = max(0, self.stale_feed_ticks - 1)
             zone_actions = dict.fromkeys(ZONES, "HOLD")
-            degraded.append("stale price feed: HOLD all")
+            degraded.append(f"stale price feed ({feed_age:.0f} s old): HOLD all" if feed_age and feed_age > FEED_STALE_S
+                            else "stale price feed: HOLD all")
         if not self.desk.alive:
             degraded.append("desk offline: new earn batches wait and expire (fail closed)")
 

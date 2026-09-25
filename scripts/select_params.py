@@ -58,7 +58,9 @@ def main() -> None:
         "month, but no parameter value was chosen on it.",
     ]
     out = Path(__file__).resolve().parents[1] / "docs" / "PARAMS.md"
-    out.write_text("\n".join(lines) + "\n")
+    marker = "<!-- other selections -->"
+    tail = out.read_text().split(marker, 1)[1] if out.exists() and marker in out.read_text() else ""
+    out.write_text("\n".join(lines) + "\n" + (f"\n{marker}{tail}" if tail else ""))
     print("\n".join(lines))
     if best != econ.PLANNER:
         print(f"\nNOTE: econ.PLANNER is {econ.PLANNER}; set it to {best}")

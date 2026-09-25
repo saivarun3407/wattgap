@@ -5,3 +5,6 @@ __pycache__/
 out/
 .pytest_cache/
 .coverage*
+data/raw/
+data/archive/
+data/feeds/

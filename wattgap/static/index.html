@@ -14,7 +14,7 @@
   <div class="wrap top-in">
     <a class="logo" href="#main" aria-label="WattGap home"><span class="mark" aria-hidden="true">⚡</span>WattGap</a>
     <nav aria-label="Sections">
-      <a href="#results">Results</a><a href="#fleet">Live fleet</a><a href="#member">Member app</a><a href="#evidence">Evidence</a>
+      <a href="#results">Results</a><a href="#grid">Where &amp; when</a><a href="#fleet">Live fleet</a><a href="#member">Member app</a><a href="#evidence">Evidence</a>
     </nav>
     <div class="tracks" aria-label="Hackathon tracks"><span class="chip on">Orchestration</span><span class="chip on">Most Commercializable</span><span class="chip">engine · Open Grid Data</span></div>
   </div>
@@ -43,6 +43,26 @@
         <h3>Net $ per home</h3>
         <div class="tscroll"><table id="zoneTable"></table></div>
         <div class="read" id="dayWhy"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="grid" class="wrap sec" aria-labelledby="h-grid">
+    <div class="sec-head"><h2 id="h-grid">Where a battery earns most, and when to be ready</h2>
+      <p>Seven years of real ERCOT 15-minute prices. The upper bound is perfect foresight (a linear program over each year), a ceiling for comparison, not a forecast. Radar and Signals only use data ERCOT had published at the time.</p></div>
+    <div class="grid g-21">
+      <div class="card">
+        <h3>Upper bound, $ per MW-year (1 MW / 2 MWh, 90% round trip, $20/MWh wear)</h3>
+        <figure class="chart"><svg id="locChart" viewBox="0 0 820 220" role="img" aria-label="Perfect-foresight value by load zone and year"></svg></figure>
+        <div class="tscroll"><table id="locTable"></table></div>
+      </div>
+      <div class="card">
+        <h3>Scarcity Radar</h3>
+        <div id="radarLive" aria-live="polite"></div>
+        <div class="tscroll"><table id="radarTable"></table></div>
+        <div class="read" id="radarWhy"></div>
+        <h3 style="margin-top:14px">Signals (real-time early warning)</h3>
+        <div class="read" id="signalsWhy"></div>
       </div>
     </div>
   </section>

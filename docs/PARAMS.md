@@ -50,3 +50,43 @@ candidates on independent days that each started at 50% charge. When we ran Sept
 window couldn't refill the battery from one day to the next. So we sized the charge window by physics
 (refill time) and switched to continuous scoring. That design change came from looking at the evaluation
 month, but no parameter value was chosen on it.
+
+<!-- other selections -->
+
+## Scarcity Radar (flagged-day policy)
+
+Written by hand from `data/derived/scarcity_model.json` (`make scarcity`). Selection used **2019–2023 only**; 2024–2025 were held out.
+
+Model: ridge logistic regression on log DAM max, log DAM max / median, log DAM AS max; spike = real time ≥ $1,000/MWh at least once in the zone-day. Coefficients (intercept first): [-3.625, 1.017, 0.033, 0.188].
+
+Grid (84 combinations): threshold [0.05, 0.1, 0.2, 0.3, 0.5, 0.7, 0.85], hold [0.0, 0.5, 1.0], spike_mult [1.0, 1.25], refill off/on. Score = train-years $/home/yr, 4-zone average; the plain planner makes $1,140.88.
+
+| threshold | hold | spike_mult | refill | train $/home/yr | vs planner |
+|---:|---:|---:|---|---:|---:|
+| 0.7 | 0.0 | 1.0 | on | 1,188.77 | +47.89 |
+| 0.85 | 1.0 | 1.0 | on | 1,185.42 | +44.54 |
+| 0.85 | 0.5 | 1.0 | on | 1,183.32 | +42.44 |
+| 0.5 | 0.0 | 1.0 | on | 1,182.65 | +41.77 |
+| 0.85 | 0.0 | 1.0 | on | 1,182.51 | +41.63 |
+| 0.7 | 0.5 | 1.0 | on | 1,179.45 | +38.57 |
+| 0.2 | 0.0 | 1.0 | on | 1,176.57 | +35.69 |
+| 0.3 | 0.0 | 1.0 | on | 1,176.10 | +35.22 |
+| 0.7 | 1.0 | 1.0 | on | 1,172.37 | +31.49 |
+| 0.5 | 0.5 | 1.0 | on | 1,171.62 | +30.74 |
+| 0.1 | 0.0 | 1.0 | on | 1,168.74 | +27.86 |
+| 0.05 | 0.0 | 1.0 | on | 1,167.27 | +26.39 |
+
+(top 12 of 84; the full grid is in the JSON.)
+
+**Chosen:** threshold 0.7, hold 0.0, spike_mult 1.0, refill on.
+
+Disclosure: the first flagged-day policy (refill up to the charge ceiling, a hold multiple) chose threshold 0.85, flagged only Uri 2021 and 8 zone-days in 2019, flagged nothing in 2024–2025 and matched the planner there. The refill rule was redesigned **after seeing that full results table, held-out rows included**. The values above were then chosen on 2019–2023 only, but the design change was informed by the held-out years.
+
+Disclosure: the threshold grid was widened once to add 0.05 and 0.1.
+
+## Signals (early-warning thresholds)
+
+`WarnParams` in `wattgap/warn.py`: discharge_at $1,000/MWh (next RTD interval), precharge_at $500/MWh within a 30-minute look-ahead, RT reserve adder ≥ $1/MWh, PRC < 3,000 MW, feed stale after 600 s.
+
+- $1,000 matches the Scarcity Radar's spike definition; $500, $1 and 3,000 MW were set by judgment, not by search.
+- Disclosure: the 30-minute look-ahead was chosen **after seeing the RTD look-ahead bias table** (README, Signals), on the same 2026-09-20 → 09-25 feeds the backtest reports. There is no held-out period for Signals.

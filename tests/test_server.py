@@ -31,3 +31,7 @@ def test_web_app_end_to_end():
         assert c.post("/api/protect?on=true&scope=fleet").json()["protected"] is True
         assert c.get("/api/export").json()["summary"]["approvals_count"] == 1
         assert "evidence pack" in c.get("/api/export.html").text
+        g = c.get("/api/grid").json()
+        assert {r["point"] for r in g["locations"]} == {"LZ_HOUSTON", "LZ_NORTH", "LZ_SOUTH", "LZ_WEST", "HB_HUBAVG"}
+        assert g["radar"]["capture"] and g["radar"]["model"]["train_years"] == [2019, 2023]
+        assert g["signals"]["rtd_runs"] > 0

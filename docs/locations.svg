@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 260" font-family="sans-serif" font-size="11">
+<text x="56" y="13">Perfect-foresight upper bound, $k per MW-year (1 MW / 2 MWh, real ERCOT RT prices)</text>
+<line x1="56" x2="630" y1="230.0" y2="230.0" stroke="#ddd"/><text x="50" y="234.0" text-anchor="end">0</text>
+<line x1="56" x2="630" y1="21.6" y2="21.6" stroke="#ddd"/><text x="50" y="25.6" text-anchor="end">220</text>
+<text x="88.8" y="248" text-anchor="middle">2019</text>
+<rect x="56.0" y="131.8" width="15.4" height="98.2" fill="#2563eb"><title>LZ_HOUSTON 2019: $103,671</title></rect>
+<rect x="72.4" y="132.3" width="15.4" height="97.7" fill="#dc2626"><title>LZ_NORTH 2019: $103,185</title></rect>
+<rect x="88.8" y="125.4" width="15.4" height="104.6" fill="#16a34a"><title>LZ_SOUTH 2019: $110,440</title></rect>
+<rect x="105.2" y="92.0" width="15.4" height="138.0" fill="#d97706"><title>LZ_WEST 2019: $145,716</title></rect>
+<text x="170.8" y="248" text-anchor="middle">2020</text>
+<rect x="138.0" y="195.5" width="15.4" height="34.5" fill="#2563eb"><title>LZ_HOUSTON 2020: $36,375</title></rect>
+<rect x="154.4" y="199.0" width="15.4" height="31.0" fill="#dc2626"><title>LZ_NORTH 2020: $32,724</title></rect>
+<rect x="170.8" y="182.0" width="15.4" height="48.0" fill="#16a34a"><title>LZ_SOUTH 2020: $50,730</title></rect>
+<rect x="187.2" y="154.0" width="15.4" height="76.0" fill="#d97706"><title>LZ_WEST 2020: $80,212</title></rect>
+<text x="252.8" y="248" text-anchor="middle">2021</text>
+<rect x="220.0" y="109.0" width="15.4" height="121.0" fill="#2563eb"><title>LZ_HOUSTON 2021: $127,798</title></rect>
+<rect x="236.4" y="118.3" width="15.4" height="111.7" fill="#dc2626"><title>LZ_NORTH 2021: $117,895</title></rect>
+<rect x="252.8" y="120.5" width="15.4" height="109.5" fill="#16a34a"><title>LZ_SOUTH 2021: $115,624</title></rect>
+<rect x="269.2" y="112.1" width="15.4" height="117.9" fill="#d97706"><title>LZ_WEST 2021: $124,452</title></rect>
+<text x="334.8" y="248" text-anchor="middle">2022</text>
+<rect x="302.0" y="99.6" width="15.4" height="130.4" fill="#2563eb"><title>LZ_HOUSTON 2022: $137,659</title></rect>
+<rect x="318.4" y="129.7" width="15.4" height="100.3" fill="#dc2626"><title>LZ_NORTH 2022: $105,906</title></rect>
+<rect x="334.8" y="136.3" width="15.4" height="93.7" fill="#16a34a"><title>LZ_SOUTH 2022: $98,935</title></rect>
+<rect x="351.2" y="104.6" width="15.4" height="125.4" fill="#d97706"><title>LZ_WEST 2022: $132,364</title></rect>
+<text x="416.8" y="248" text-anchor="middle">2023</text>
+<rect x="384.0" y="60.5" width="15.4" height="169.5" fill="#2563eb"><title>LZ_HOUSTON 2023: $178,983</title></rect>
+<rect x="400.4" y="61.2" width="15.4" height="168.8" fill="#dc2626"><title>LZ_NORTH 2023: $178,259</title></rect>
+<rect x="416.8" y="90.1" width="15.4" height="139.9" fill="#16a34a"><title>LZ_SOUTH 2023: $147,725</title></rect>
+<rect x="433.2" y="20.0" width="15.4" height="210.0" fill="#d97706"><title>LZ_WEST 2023: $221,716</title></rect>
+<text x="498.8" y="248" text-anchor="middle">2024</text>
+<rect x="466.0" y="182.7" width="15.4" height="47.3" fill="#2563eb"><title>LZ_HOUSTON 2024: $49,986</title></rect>
+<rect x="482.4" y="180.2" width="15.4" height="49.8" fill="#dc2626"><title>LZ_NORTH 2024: $52,610</title></rect>
+<rect x="498.8" y="170.8" width="15.4" height="59.2" fill="#16a34a"><title>LZ_SOUTH 2024: $62,471</title></rect>
+<rect x="515.2" y="155.7" width="15.4" height="74.3" fill="#d97706"><title>LZ_WEST 2024: $78,403</title></rect>
+<text x="580.8" y="248" text-anchor="middle">2025</text>
+<rect x="548.0" y="197.9" width="15.4" height="32.1" fill="#2563eb"><title>LZ_HOUSTON 2025: $33,927</title></rect>
+<rect x="564.4" y="192.3" width="15.4" height="37.7" fill="#dc2626"><title>LZ_NORTH 2025: $39,845</title></rect>
+<rect x="580.8" y="196.0" width="15.4" height="34.0" fill="#16a34a"><title>LZ_SOUTH 2025: $35,914</title></rect>
+<rect x="597.2" y="177.1" width="15.4" height="52.9" fill="#d97706"><title>LZ_WEST 2025: $55,899</title></rect>
+<rect x="310" y="24" width="10" height="10" fill="#2563eb"/><text x="324" y="33">Houston</text>
+<rect x="390" y="24" width="10" height="10" fill="#dc2626"/><text x="404" y="33">North</text>
+<rect x="470" y="24" width="10" height="10" fill="#16a34a"/><text x="484" y="33">South</text>
+<rect x="550" y="24" width="10" height="10" fill="#d97706"/><text x="564" y="33">West</text>
+</svg>

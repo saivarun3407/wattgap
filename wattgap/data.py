@@ -7,6 +7,7 @@ backcasted residential load profile (kWh per 15 minutes for an average premise).
 from __future__ import annotations
 
 import csv
+import gzip
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from functools import lru_cache
@@ -19,6 +20,9 @@ INTERVAL_H = 0.25  # ERCOT real-time SPP settles on 15-minute intervals
 RT_FILES = ("ercot_rtm_spp_2023-07_09.csv", "ercot_rtm_spp_2026-09-20_21.csv")
 DAM_FILES = ("ercot_dam_spp_2023-07_09.csv", "ercot_dam_spp_2026-09-20_21.csv")
 LOAD_FILE = "ercot_load_profile_reshiwr.csv"
+# Yearly ERCOT archives (NP6-785-ER, NP4-180-ER, NP4-181-ER), every load zone and hub. Large and
+# git-ignored: `make archive` (scripts/fetch_archive.py) writes them. Only the multi-year analyses need them.
+ARCHIVE = DATA / "archive"
 
 # The two headline days. Both are real; each needs its prior day for trailing percentiles.
 SCENARIOS = {
@@ -38,7 +42,7 @@ class Interval:
     @property
     def system_price(self) -> float:
         """Simple average of the four load zones: a proxy for system-wide conditions."""
-        return sum(self.prices.values()) / len(self.prices)
+        return sum(self.prices[z] for z in ZONES) / len(ZONES)
 
 
 def _read(name: str, key: str) -> dict[datetime, dict[str, float]]:
@@ -61,8 +65,63 @@ def _by_day() -> dict[date, list[Interval]]:
     return out
 
 
+def archive_path(kind: str, year: int) -> Path:
+    return ARCHIVE / f"{kind}_{year}.csv.gz"
+
+
+def archive_years() -> list[int]:
+    """Years with both real-time and day-ahead archives on disk."""
+    return sorted(int(p.name[3:7]) for p in ARCHIVE.glob("rt_*.csv.gz") if archive_path("dam", int(p.name[3:7])).exists())
+
+
+@lru_cache(maxsize=None)
+def read_archive(kind: str, year: int) -> tuple[tuple[datetime, ...], dict[str, tuple[float, ...]]]:
+    """(interval starts, {settlement point or AS product: values}) from data/archive/{kind}_{year}.csv.gz."""
+    path = archive_path(kind, year)
+    if not path.exists():
+        raise KeyError(f"no archive {path.name}; run `make archive`")
+    with gzip.open(path, "rt") as f:
+        r = csv.reader(f)
+        head = next(r)
+        rows = list(r)
+    starts = tuple(datetime.fromisoformat(x[0]) for x in rows)
+    cols = {h: tuple(float(x[k]) if x[k] else float("nan") for x in rows) for k, h in enumerate(head) if k}
+    return starts, cols
+
+
+@lru_cache(maxsize=None)
+def _archive_days(year: int) -> dict[date, list[Interval]]:
+    starts, cols = read_archive("rt", year)
+    out: dict[date, list[Interval]] = {}
+    for k, t in enumerate(starts):
+        out.setdefault(t.date(), []).append(Interval(t, {p: v[k] for p, v in cols.items()}, {}))
+    return out
+
+
+@lru_cache(maxsize=None)
+def _archive_dam(year: int) -> dict[date, list[dict[str, float]]]:
+    """24 clock hours per day: the repeated fall-back hour is averaged, the missing spring hour copies the one before."""
+    starts, cols = read_archive("dam", year)
+    by: dict[date, dict[int, list[dict[str, float]]]] = {}
+    for k, t in enumerate(starts):
+        by.setdefault(t.date(), {}).setdefault(t.hour, []).append({p: v[k] for p, v in cols.items()})
+    out = {}
+    for d, hours in by.items():
+        row = []
+        for h in range(24):
+            hs = hours.get(h)
+            row.append({p: sum(x[p] for x in hs) / len(hs) for p in hs[0]} if hs else dict(row[-1]))
+        out[d] = row
+    return out
+
+
 def day(d: date) -> list[Interval]:
+    """One day's real-time intervals. The archive (every zone and hub) wins where present; the committed
+    files carry the same load-zone prices plus home load, which is kept."""
     rows = _by_day().get(d)
+    if archive_path("rt", d.year).exists() and d in _archive_days(d.year):
+        load = {i.start: i.home_kwh for i in rows or []}
+        rows = [Interval(i.start, i.prices, load.get(i.start, {})) for i in _archive_days(d.year)[d]]
     if not rows:
         raise KeyError(f"no ERCOT data for {d}; see data/PROVENANCE.md")
     return rows
@@ -80,6 +139,8 @@ def _dam() -> dict[date, list[dict[str, float]]]:
 def dam_day(d: date) -> list[dict[str, float]]:
     """24 hourly day-ahead prices for delivery day `d`, published by ERCOT the day before."""
     hours = _dam().get(d)
+    if not hours and archive_path("dam", d.year).exists():
+        hours = _archive_dam(d.year).get(d)
     if not hours or len(hours) != 24:
         raise KeyError(f"no ERCOT day-ahead prices for {d}; see data/PROVENANCE.md")
     return hours

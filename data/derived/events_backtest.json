@@ -1,0 +1,179 @@
+{
+ "games": 17,
+ "window": "kickoff -2 h to +4 h, 15-min RT SPP",
+ "source_games": "data/events/ut_home_games.csv",
+ "controls": {
+  "all other Saturdays": 25,
+  "excluding ACL and F1 Saturdays": 17
+ },
+ "results": [
+  {
+   "controls": "all other Saturdays",
+   "baseline": "mean of controls",
+   "metric": "LZ_AEN",
+   "n_games": 17,
+   "n_controls": 25,
+   "mean_delta": -36.13,
+   "median_delta": -11.16,
+   "ci95": [
+    -107.85,
+    -1.0
+   ],
+   "perm_p": 0.302
+  },
+  {
+   "controls": "all other Saturdays",
+   "baseline": "mean of controls",
+   "metric": "LZ_AEN - HB_HUBAVG",
+   "n_games": 17,
+   "n_controls": 25,
+   "mean_delta": -6.76,
+   "median_delta": -1.63,
+   "ci95": [
+    -18.02,
+    0.23
+   ],
+   "perm_p": 0.287
+  },
+  {
+   "controls": "all other Saturdays",
+   "baseline": "mean of controls",
+   "metric": "LZ_AEN - LZ_LCRA",
+   "n_games": 17,
+   "n_controls": 25,
+   "mean_delta": -0.05,
+   "median_delta": -0.17,
+   "ci95": [
+    -10.55,
+    10.09
+   ],
+   "perm_p": 0.978
+  },
+  {
+   "controls": "all other Saturdays",
+   "baseline": "median of controls",
+   "metric": "LZ_AEN",
+   "n_games": 17,
+   "n_controls": 25,
+   "mean_delta": -1.48,
+   "median_delta": -4.65,
+   "ci95": [
+    -39.48,
+    9.03
+   ],
+   "perm_p": 0.915
+  },
+  {
+   "controls": "all other Saturdays",
+   "baseline": "median of controls",
+   "metric": "LZ_AEN - HB_HUBAVG",
+   "n_games": 17,
+   "n_controls": 25,
+   "mean_delta": -0.67,
+   "median_delta": -0.47,
+   "ci95": [
+    -8.52,
+    2.34
+   ],
+   "perm_p": 0.838
+  },
+  {
+   "controls": "all other Saturdays",
+   "baseline": "median of controls",
+   "metric": "LZ_AEN - LZ_LCRA",
+   "n_games": 17,
+   "n_controls": 25,
+   "mean_delta": 0.05,
+   "median_delta": -0.13,
+   "ci95": [
+    -1.61,
+    0.83
+   ],
+   "perm_p": 0.979
+  },
+  {
+   "controls": "excluding ACL and F1 Saturdays",
+   "baseline": "mean of controls",
+   "metric": "LZ_AEN",
+   "n_games": 17,
+   "n_controls": 17,
+   "mean_delta": -54.19,
+   "median_delta": -11.58,
+   "ci95": [
+    -153.69,
+    -4.26
+   ],
+   "perm_p": 0.149
+  },
+  {
+   "controls": "excluding ACL and F1 Saturdays",
+   "baseline": "mean of controls",
+   "metric": "LZ_AEN - HB_HUBAVG",
+   "n_games": 17,
+   "n_controls": 17,
+   "mean_delta": -8.45,
+   "median_delta": -1.07,
+   "ci95": [
+    -25.63,
+    1.09
+   ],
+   "perm_p": 0.285
+  },
+  {
+   "controls": "excluding ACL and F1 Saturdays",
+   "baseline": "mean of controls",
+   "metric": "LZ_AEN - LZ_LCRA",
+   "n_games": 17,
+   "n_controls": 17,
+   "mean_delta": -0.54,
+   "median_delta": -0.25,
+   "ci95": [
+    -15.43,
+    13.72
+   ],
+   "perm_p": 0.874
+  },
+  {
+   "controls": "excluding ACL and F1 Saturdays",
+   "baseline": "median of controls",
+   "metric": "LZ_AEN",
+   "n_games": 17,
+   "n_controls": 17,
+   "mean_delta": -10.56,
+   "median_delta": -5.81,
+   "ci95": [
+    -145.97,
+    5.1
+   ],
+   "perm_p": 0.713
+  },
+  {
+   "controls": "excluding ACL and F1 Saturdays",
+   "baseline": "median of controls",
+   "metric": "LZ_AEN - HB_HUBAVG",
+   "n_games": 17,
+   "n_controls": 17,
+   "mean_delta": 0.39,
+   "median_delta": -0.01,
+   "ci95": [
+    -25.66,
+    3.4
+   ],
+   "perm_p": 0.929
+  },
+  {
+   "controls": "excluding ACL and F1 Saturdays",
+   "baseline": "median of controls",
+   "metric": "LZ_AEN - LZ_LCRA",
+   "n_games": 17,
+   "n_controls": 17,
+   "mean_delta": 0.05,
+   "median_delta": -0.14,
+   "ci95": [
+    -15.58,
+    23.74
+   ],
+   "perm_p": 0.984
+  }
+ ]
+}

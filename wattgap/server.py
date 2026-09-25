@@ -6,6 +6,8 @@ Run:  uvicorn wattgap.server:app --port 8000     (or: make serve)
 from __future__ import annotations
 
 import asyncio
+import csv
+import json
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -21,6 +23,7 @@ from .export import build_pack, write
 from .live import Sim
 
 STATIC = Path(__file__).resolve().parent / "static"
+DERIVED = Path(__file__).resolve().parents[1] / "data" / "derived"
 EXPORT_DIR = Path(__file__).resolve().parents[1] / "out" / "ui-export"
 TICK_S = 2.0  # one replayed 15-minute interval every 2 real seconds
 MEMBER_HOME = "core-00000"  # the home shown in the member app (LZ_HOUSTON)
@@ -71,6 +74,31 @@ def index() -> FileResponse:
 @app.get("/api/economics")
 def economics() -> dict:
     return report.build()
+
+
+def _rows(name: str) -> list[dict]:
+    path = DERIVED / name
+    return list(csv.DictReader(path.open())) if path.exists() else []
+
+
+def _json(name: str) -> dict | None:
+    path = DERIVED / name
+    return json.loads(path.read_text()) if path.exists() else None
+
+
+@app.get("/api/grid")
+def grid() -> dict:
+    """Committed results of the multi-year analyses: locations, Scarcity Radar backtest, Signals backtest."""
+    model = _json("scarcity_model.json") or {}
+    flagged = [r for r in _rows("scarcity_days.csv") if r["flagged"] == "1"]
+    return {
+        "locations": [r for r in _rows("locations.csv") if r["point"] in (*ZONES, "HB_HUBAVG")],
+        "radar": {"capture": _rows("scarcity_capture.csv"), "flagged_heldout": flagged,
+                  "model": {k: model.get(k) for k in ("threshold", "hold", "spike_mult", "refill", "features",
+                                                       "spike_usd_per_mwh", "train_years", "eval_years")},
+                  "live": _json("radar_live.json"), "vintages": _rows("forecast_vintages.csv")},
+        "signals": _json("warn_backtest.json"),
+    }
 
 
 @app.get("/api/state")
