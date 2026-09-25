@@ -1,3 +1,5 @@
+> **Archived, pre-event planning (Sep 23, 2026). Not a description of the shipped code.** Dollar figures, uplift percentages and claims about Base here were never computed or verified. See [README](../../README.md) and [PROJECT.md](../../PROJECT.md) for what is real.
+
 # FleetPulse Desk — build plan (extends WattGap)
 
 This is the plan we locked for Base Power × AITX (Sep 25–27, 2026).

@@ -1,3 +1,5 @@
+> **Archived, pre-event planning (Sep 23, 2026). Not a description of the shipped code.** Dollar figures, uplift percentages and claims about Base here were never computed or verified. See [README](../../README.md) and [PROJECT.md](../../PROJECT.md) for what is real.
+
 # Engineering Roadmap: WattGap 11-Layer Platform
 
 **Consolidated task list.** All 11 features broken into small engineering blocks. Phased by hackathon priority + week 1–3 follow-up.

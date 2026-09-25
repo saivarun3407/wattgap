@@ -1,3 +1,5 @@
+> **Archived, pre-event planning (Sep 23, 2026). Not a description of the shipped code.** Dollar figures, uplift percentages and claims about Base here were never computed or verified. See [README](../../../README.md) and [PROJECT.md](../../../PROJECT.md) for what is real.
+
 # PRD: Grid Health Awareness
 
 **Status:** Hackathon + Week 2 | **Effort:** 4h | **Revenue:** Grid services contracts

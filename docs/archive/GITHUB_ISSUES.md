@@ -1,3 +1,5 @@
+> **Archived, pre-event planning (Sep 23, 2026). Not a description of the shipped code.** Dollar figures, uplift percentages and claims about Base here were never computed or verified. See [README](../../README.md) and [PROJECT.md](../../PROJECT.md) for what is real.
+
 # GitHub Issues Tracker Template
 
 **Copy these into GitHub Issues to track the 48h hackathon sprint.**
