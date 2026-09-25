@@ -1,0 +1,627 @@
+{
+ "mean": [
+  4.346859161365093,
+  1.0600356479228612,
+  3.93162564026297
+ ],
+ "scale": [
+  0.9147019804849447,
+  0.7386031641888287,
+  1.1006365365360633
+ ],
+ "coef": [
+  -3.6254921488772247,
+  1.016859870282047,
+  0.03310445125048382,
+  0.18806414440283328
+ ],
+ "threshold": 0.7,
+ "hold": 0.0,
+ "spike_mult": 1.0,
+ "refill": true,
+ "features": [
+  "log DAM max",
+  "log DAM max / median",
+  "log DAM AS max"
+ ],
+ "spike_usd_per_mwh": 1000.0,
+ "train_years": [
+  2019,
+  2023
+ ],
+ "eval_years": [
+  2024,
+  2025
+ ],
+ "grid": [
+  {
+   "threshold": 0.05,
+   "hold": 0.0,
+   "spike_mult": 1.0,
+   "refill": false,
+   "train_usd_per_home_yr": 1125.3
+  },
+  {
+   "threshold": 0.05,
+   "hold": 0.0,
+   "spike_mult": 1.0,
+   "refill": true,
+   "train_usd_per_home_yr": 1167.27
+  },
+  {
+   "threshold": 0.05,
+   "hold": 0.0,
+   "spike_mult": 1.25,
+   "refill": false,
+   "train_usd_per_home_yr": 1141.09
+  },
+  {
+   "threshold": 0.05,
+   "hold": 0.0,
+   "spike_mult": 1.25,
+   "refill": true,
+   "train_usd_per_home_yr": 1154.14
+  },
+  {
+   "threshold": 0.05,
+   "hold": 0.5,
+   "spike_mult": 1.0,
+   "refill": false,
+   "train_usd_per_home_yr": 1113.57
+  },
+  {
+   "threshold": 0.05,
+   "hold": 0.5,
+   "spike_mult": 1.0,
+   "refill": true,
+   "train_usd_per_home_yr": 1154.64
+  },
+  {
+   "threshold": 0.05,
+   "hold": 0.5,
+   "spike_mult": 1.25,
+   "refill": false,
+   "train_usd_per_home_yr": 1135.05
+  },
+  {
+   "threshold": 0.05,
+   "hold": 0.5,
+   "spike_mult": 1.25,
+   "refill": true,
+   "train_usd_per_home_yr": 1145.29
+  },
+  {
+   "threshold": 0.05,
+   "hold": 1.0,
+   "spike_mult": 1.0,
+   "refill": false,
+   "train_usd_per_home_yr": 1089.03
+  },
+  {
+   "threshold": 0.05,
+   "hold": 1.0,
+   "spike_mult": 1.0,
+   "refill": true,
+   "train_usd_per_home_yr": 1130.29
+  },
+  {
+   "threshold": 0.05,
+   "hold": 1.0,
+   "spike_mult": 1.25,
+   "refill": false,
+   "train_usd_per_home_yr": 1102.35
+  },
+  {
+   "threshold": 0.05,
+   "hold": 1.0,
+   "spike_mult": 1.25,
+   "refill": true,
+   "train_usd_per_home_yr": 1109.5
+  },
+  {
+   "threshold": 0.1,
+   "hold": 0.0,
+   "spike_mult": 1.0,
+   "refill": false,
+   "train_usd_per_home_yr": 1131.82
+  },
+  {
+   "threshold": 0.1,
+   "hold": 0.0,
+   "spike_mult": 1.0,
+   "refill": true,
+   "train_usd_per_home_yr": 1168.74
+  },
+  {
+   "threshold": 0.1,
+   "hold": 0.0,
+   "spike_mult": 1.25,
+   "refill": false,
+   "train_usd_per_home_yr": 1140.68
+  },
+  {
+   "threshold": 0.1,
+   "hold": 0.0,
+   "spike_mult": 1.25,
+   "refill": true,
+   "train_usd_per_home_yr": 1150.18
+  },
+  {
+   "threshold": 0.1,
+   "hold": 0.5,
+   "spike_mult": 1.0,
+   "refill": false,
+   "train_usd_per_home_yr": 1119.43
+  },
+  {
+   "threshold": 0.1,
+   "hold": 0.5,
+   "spike_mult": 1.0,
+   "refill": true,
+   "train_usd_per_home_yr": 1156.19
+  },
+  {
+   "threshold": 0.1,
+   "hold": 0.5,
+   "spike_mult": 1.25,
+   "refill": false,
+   "train_usd_per_home_yr": 1135.24
+  },
+  {
+   "threshold": 0.1,
+   "hold": 0.5,
+   "spike_mult": 1.25,
+   "refill": true,
+   "train_usd_per_home_yr": 1142.88
+  },
+  {
+   "threshold": 0.1,
+   "hold": 1.0,
+   "spike_mult": 1.0,
+   "refill": false,
+   "train_usd_per_home_yr": 1099.53
+  },
+  {
+   "threshold": 0.1,
+   "hold": 1.0,
+   "spike_mult": 1.0,
+   "refill": true,
+   "train_usd_per_home_yr": 1136.3
+  },
+  {
+   "threshold": 0.1,
+   "hold": 1.0,
+   "spike_mult": 1.25,
+   "refill": false,
+   "train_usd_per_home_yr": 1108.21
+  },
+  {
+   "threshold": 0.1,
+   "hold": 1.0,
+   "spike_mult": 1.25,
+   "refill": true,
+   "train_usd_per_home_yr": 1112.43
+  },
+  {
+   "threshold": 0.2,
+   "hold": 0.0,
+   "spike_mult": 1.0,
+   "refill": false,
+   "train_usd_per_home_yr": 1140.1
+  },
+  {
+   "threshold": 0.2,
+   "hold": 0.0,
+   "spike_mult": 1.0,
+   "refill": true,
+   "train_usd_per_home_yr": 1176.57
+  },
+  {
+   "threshold": 0.2,
+   "hold": 0.0,
+   "spike_mult": 1.25,
+   "refill": false,
+   "train_usd_per_home_yr": 1142.68
+  },
+  {
+   "threshold": 0.2,
+   "hold": 0.0,
+   "spike_mult": 1.25,
+   "refill": true,
+   "train_usd_per_home_yr": 1151.81
+  },
+  {
+   "threshold": 0.2,
+   "hold": 0.5,
+   "spike_mult": 1.0,
+   "refill": false,
+   "train_usd_per_home_yr": 1129.41
+  },
+  {
+   "threshold": 0.2,
+   "hold": 0.5,
+   "spike_mult": 1.0,
+   "refill": true,
+   "train_usd_per_home_yr": 1165.77
+  },
+  {
+   "threshold": 0.2,
+   "hold": 0.5,
+   "spike_mult": 1.25,
+   "refill": false,
+   "train_usd_per_home_yr": 1139.31
+  },
+  {
+   "threshold": 0.2,
+   "hold": 0.5,
+   "spike_mult": 1.25,
+   "refill": true,
+   "train_usd_per_home_yr": 1146.57
+  },
+  {
+   "threshold": 0.2,
+   "hold": 1.0,
+   "spike_mult": 1.0,
+   "refill": false,
+   "train_usd_per_home_yr": 1115.13
+  },
+  {
+   "threshold": 0.2,
+   "hold": 1.0,
+   "spike_mult": 1.0,
+   "refill": true,
+   "train_usd_per_home_yr": 1151.57
+  },
+  {
+   "threshold": 0.2,
+   "hold": 1.0,
+   "spike_mult": 1.25,
+   "refill": false,
+   "train_usd_per_home_yr": 1117.77
+  },
+  {
+   "threshold": 0.2,
+   "hold": 1.0,
+   "spike_mult": 1.25,
+   "refill": true,
+   "train_usd_per_home_yr": 1121.62
+  },
+  {
+   "threshold": 0.3,
+   "hold": 0.0,
+   "spike_mult": 1.0,
+   "refill": false,
+   "train_usd_per_home_yr": 1140.13
+  },
+  {
+   "threshold": 0.3,
+   "hold": 0.0,
+   "spike_mult": 1.0,
+   "refill": true,
+   "train_usd_per_home_yr": 1176.1
+  },
+  {
+   "threshold": 0.3,
+   "hold": 0.0,
+   "spike_mult": 1.25,
+   "refill": false,
+   "train_usd_per_home_yr": 1142.64
+  },
+  {
+   "threshold": 0.3,
+   "hold": 0.0,
+   "spike_mult": 1.25,
+   "refill": true,
+   "train_usd_per_home_yr": 1151.27
+  },
+  {
+   "threshold": 0.3,
+   "hold": 0.5,
+   "spike_mult": 1.0,
+   "refill": false,
+   "train_usd_per_home_yr": 1131.12
+  },
+  {
+   "threshold": 0.3,
+   "hold": 0.5,
+   "spike_mult": 1.0,
+   "refill": true,
+   "train_usd_per_home_yr": 1166.95
+  },
+  {
+   "threshold": 0.3,
+   "hold": 0.5,
+   "spike_mult": 1.25,
+   "refill": false,
+   "train_usd_per_home_yr": 1140.71
+  },
+  {
+   "threshold": 0.3,
+   "hold": 0.5,
+   "spike_mult": 1.25,
+   "refill": true,
+   "train_usd_per_home_yr": 1147.44
+  },
+  {
+   "threshold": 0.3,
+   "hold": 1.0,
+   "spike_mult": 1.0,
+   "refill": false,
+   "train_usd_per_home_yr": 1117.79
+  },
+  {
+   "threshold": 0.3,
+   "hold": 1.0,
+   "spike_mult": 1.0,
+   "refill": true,
+   "train_usd_per_home_yr": 1153.55
+  },
+  {
+   "threshold": 0.3,
+   "hold": 1.0,
+   "spike_mult": 1.25,
+   "refill": false,
+   "train_usd_per_home_yr": 1121.36
+  },
+  {
+   "threshold": 0.3,
+   "hold": 1.0,
+   "spike_mult": 1.25,
+   "refill": true,
+   "train_usd_per_home_yr": 1124.53
+  },
+  {
+   "threshold": 0.5,
+   "hold": 0.0,
+   "spike_mult": 1.0,
+   "refill": false,
+   "train_usd_per_home_yr": 1146.9
+  },
+  {
+   "threshold": 0.5,
+   "hold": 0.0,
+   "spike_mult": 1.0,
+   "refill": true,
+   "train_usd_per_home_yr": 1182.65
+  },
+  {
+   "threshold": 0.5,
+   "hold": 0.0,
+   "spike_mult": 1.25,
+   "refill": false,
+   "train_usd_per_home_yr": 1142.23
+  },
+  {
+   "threshold": 0.5,
+   "hold": 0.0,
+   "spike_mult": 1.25,
+   "refill": true,
+   "train_usd_per_home_yr": 1150.65
+  },
+  {
+   "threshold": 0.5,
+   "hold": 0.5,
+   "spike_mult": 1.0,
+   "refill": false,
+   "train_usd_per_home_yr": 1135.85
+  },
+  {
+   "threshold": 0.5,
+   "hold": 0.5,
+   "spike_mult": 1.0,
+   "refill": true,
+   "train_usd_per_home_yr": 1171.62
+  },
+  {
+   "threshold": 0.5,
+   "hold": 0.5,
+   "spike_mult": 1.25,
+   "refill": false,
+   "train_usd_per_home_yr": 1139.15
+  },
+  {
+   "threshold": 0.5,
+   "hold": 0.5,
+   "spike_mult": 1.25,
+   "refill": true,
+   "train_usd_per_home_yr": 1145.81
+  },
+  {
+   "threshold": 0.5,
+   "hold": 1.0,
+   "spike_mult": 1.0,
+   "refill": false,
+   "train_usd_per_home_yr": 1122.26
+  },
+  {
+   "threshold": 0.5,
+   "hold": 1.0,
+   "spike_mult": 1.0,
+   "refill": true,
+   "train_usd_per_home_yr": 1158.09
+  },
+  {
+   "threshold": 0.5,
+   "hold": 1.0,
+   "spike_mult": 1.25,
+   "refill": false,
+   "train_usd_per_home_yr": 1123.94
+  },
+  {
+   "threshold": 0.5,
+   "hold": 1.0,
+   "spike_mult": 1.25,
+   "refill": true,
+   "train_usd_per_home_yr": 1127.2
+  },
+  {
+   "threshold": 0.7,
+   "hold": 0.0,
+   "spike_mult": 1.0,
+   "refill": false,
+   "train_usd_per_home_yr": 1152.93
+  },
+  {
+   "threshold": 0.7,
+   "hold": 0.0,
+   "spike_mult": 1.0,
+   "refill": true,
+   "train_usd_per_home_yr": 1188.77
+  },
+  {
+   "threshold": 0.7,
+   "hold": 0.0,
+   "spike_mult": 1.25,
+   "refill": false,
+   "train_usd_per_home_yr": 1141.09
+  },
+  {
+   "threshold": 0.7,
+   "hold": 0.0,
+   "spike_mult": 1.25,
+   "refill": true,
+   "train_usd_per_home_yr": 1149.59
+  },
+  {
+   "threshold": 0.7,
+   "hold": 0.5,
+   "spike_mult": 1.0,
+   "refill": false,
+   "train_usd_per_home_yr": 1143.61
+  },
+  {
+   "threshold": 0.7,
+   "hold": 0.5,
+   "spike_mult": 1.0,
+   "refill": true,
+   "train_usd_per_home_yr": 1179.45
+  },
+  {
+   "threshold": 0.7,
+   "hold": 0.5,
+   "spike_mult": 1.25,
+   "refill": false,
+   "train_usd_per_home_yr": 1140.08
+  },
+  {
+   "threshold": 0.7,
+   "hold": 0.5,
+   "spike_mult": 1.25,
+   "refill": true,
+   "train_usd_per_home_yr": 1146.8
+  },
+  {
+   "threshold": 0.7,
+   "hold": 1.0,
+   "spike_mult": 1.0,
+   "refill": false,
+   "train_usd_per_home_yr": 1136.53
+  },
+  {
+   "threshold": 0.7,
+   "hold": 1.0,
+   "spike_mult": 1.0,
+   "refill": true,
+   "train_usd_per_home_yr": 1172.37
+  },
+  {
+   "threshold": 0.7,
+   "hold": 1.0,
+   "spike_mult": 1.25,
+   "refill": false,
+   "train_usd_per_home_yr": 1131.38
+  },
+  {
+   "threshold": 0.7,
+   "hold": 1.0,
+   "spike_mult": 1.25,
+   "refill": true,
+   "train_usd_per_home_yr": 1134.65
+  },
+  {
+   "threshold": 0.85,
+   "hold": 0.0,
+   "spike_mult": 1.0,
+   "refill": false,
+   "train_usd_per_home_yr": 1146.49
+  },
+  {
+   "threshold": 0.85,
+   "hold": 0.0,
+   "spike_mult": 1.0,
+   "refill": true,
+   "train_usd_per_home_yr": 1182.51
+  },
+  {
+   "threshold": 0.85,
+   "hold": 0.0,
+   "spike_mult": 1.25,
+   "refill": false,
+   "train_usd_per_home_yr": 1140.88
+  },
+  {
+   "threshold": 0.85,
+   "hold": 0.0,
+   "spike_mult": 1.25,
+   "refill": true,
+   "train_usd_per_home_yr": 1149.57
+  },
+  {
+   "threshold": 0.85,
+   "hold": 0.5,
+   "spike_mult": 1.0,
+   "refill": false,
+   "train_usd_per_home_yr": 1147.3
+  },
+  {
+   "threshold": 0.85,
+   "hold": 0.5,
+   "spike_mult": 1.0,
+   "refill": true,
+   "train_usd_per_home_yr": 1183.32
+  },
+  {
+   "threshold": 0.85,
+   "hold": 0.5,
+   "spike_mult": 1.25,
+   "refill": false,
+   "train_usd_per_home_yr": 1147.4
+  },
+  {
+   "threshold": 0.85,
+   "hold": 0.5,
+   "spike_mult": 1.25,
+   "refill": true,
+   "train_usd_per_home_yr": 1154.31
+  },
+  {
+   "threshold": 0.85,
+   "hold": 1.0,
+   "spike_mult": 1.0,
+   "refill": false,
+   "train_usd_per_home_yr": 1149.4
+  },
+  {
+   "threshold": 0.85,
+   "hold": 1.0,
+   "spike_mult": 1.0,
+   "refill": true,
+   "train_usd_per_home_yr": 1185.42
+  },
+  {
+   "threshold": 0.85,
+   "hold": 1.0,
+   "spike_mult": 1.25,
+   "refill": false,
+   "train_usd_per_home_yr": 1151.06
+  },
+  {
+   "threshold": 0.85,
+   "hold": 1.0,
+   "spike_mult": 1.25,
+   "refill": true,
+   "train_usd_per_home_yr": 1154.5
+  }
+ ],
+ "train_planner_usd_per_home_yr": 1140.88
+}

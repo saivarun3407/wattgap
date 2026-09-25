@@ -1,0 +1,28 @@
+{
+ "computed": "2026-09-25T13:28-05:00",
+ "operating_day": "09/26/2026",
+ "as_max": 16.4,
+ "threshold": 0.7,
+ "zones": {
+  "LZ_HOUSTON": {
+   "score": 0.0166,
+   "flagged": false,
+   "dam_max": 61.77
+  },
+  "LZ_NORTH": {
+   "score": 0.0178,
+   "flagged": false,
+   "dam_max": 65.64
+  },
+  "LZ_SOUTH": {
+   "score": 0.0201,
+   "flagged": false,
+   "dam_max": 73.58
+  },
+  "LZ_WEST": {
+   "score": 0.0191,
+   "flagged": false,
+   "dam_max": 70.29
+  }
+ }
+}
