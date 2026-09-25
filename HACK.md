@@ -11,7 +11,11 @@
 - [x] Signed commands with anti-replay; rogue SoC quarantine
 - [x] Evidence export, one-command demo (`make demo`), benchmark (`make bench`)
 - [x] Web UI with economics, live fleet, desk, member view (`make serve`)
-- [x] README to the submission checklist; 31 tests
+- [x] Day-ahead planner on ERCOT DAM prices, params chosen on Jul–Aug (`make params`)
+- [x] Per-device ed25519 keys with enrollment, pinning, revocation; devices as OS processes over TCP (`make demo-net`)
+- [x] Vectorized fleet math, per-zone commitments with re-commit, home load netting; sharded benchmark
+- [x] Member app: onboarding, receipt, statement, bill toggle (assumption), storm Protect; a11y and mobile
+- [x] README to the submission checklist; 59 tests, 96% coverage
 
 ## Still to do
 

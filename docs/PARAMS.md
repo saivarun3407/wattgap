@@ -44,3 +44,9 @@ Fair schedule on the same days: **$10.218/home/day**.
 
 Disclosure: the first grid had spike_mult in {off, 1.5, 2, 3}. Its best value sat at the edge (1.5), so the
 grid was widened once to add 1.0 and 1.25. That second look also used only the selection days.
+
+Disclosure: the first planner version used the same number of hours for charging and discharging, and it scored
+candidates on independent days that each started at 50% charge. When we ran September we saw a 1-hour charge
+window couldn't refill the battery from one day to the next. So we sized the charge window by physics
+(refill time) and switched to continuous scoring. That design change came from looking at the evaluation
+month, but no parameter value was chosen on it.
